@@ -21,12 +21,16 @@ export const signup = async (data) => {
  * { email, password }
  */
 export const login = async (data) => {
+console.log("data",data);
+  console.log("rees",API_URLS.LOGIN)
+
   const res = await apiRequest({
     endUrl: API_URLS.LOGIN,
     method: "POST",
     body: data,
     showMsg: true,
   });
-//   console.log(res)
+
+  console.log("reees",res)
   return res;
 };
