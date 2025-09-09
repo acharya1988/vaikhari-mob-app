@@ -22,7 +22,7 @@ export default function Button({
   const content = (
     <View style={[s.row, { gap: 8, justifyContent: 'center', alignItems: 'center' }]}>
       {left}
-      <Text style={[{ fontSize: font, fontWeight: '600' }, textColor(variant), textStyle]}>{title}</Text>
+      <Text style={[{ fontSize: font, fontFamily: 'Poppins_600SemiBold' }, textColor(variant), textStyle]}>{title}</Text>
       {right}
     </View>
   );

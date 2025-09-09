@@ -19,6 +19,5 @@ const s = StyleSheet.create({
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
   },
-  title: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: colors.black },
+  title: { flex: 1, textAlign: 'center', fontSize: 17, fontFamily: 'Poppins_700Bold', color: colors.black },
 });
-

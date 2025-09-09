@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, View, Text, StyleSheet } from 'react-native';
 import { colors, hairline, radii, spacing } from '../theme';
-import { ChevronRight } from 'lucide-react-native';
+import { FontAwesome5 as FA } from '@expo/vector-icons';
 
 export default function Card({ title, subtitle, onPress, right, children, style }) {
   const Wrapper = onPress ? Pressable : View;
@@ -19,7 +19,7 @@ export default function Card({ title, subtitle, onPress, right, children, style 
       )}
       {children}
       <View style={s.right}>
-        {right || (onPress ? <ChevronRight size={18} color={'#000'} /> : null)}
+        {right || (onPress ? <FA name="chevron-right" size={16} color={'#000'} /> : null)}
       </View>
     </Wrapper>
   );
@@ -34,8 +34,7 @@ const s = StyleSheet.create({
     ...hairline(0.08),
   },
   header: { marginBottom: 6 },
-  title: { fontSize: 16, fontWeight: '600', color: colors.black },
+  title: { fontSize: 16, fontFamily: 'Poppins_600SemiBold', color: colors.black },
   subtitle: { fontSize: 13, color: colors.grey, marginTop: 2 },
   right: { position: 'absolute', right: 12, top: 12 },
 });
-

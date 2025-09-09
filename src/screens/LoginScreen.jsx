@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   Platform,
 } from "react-native";
+import { FontAwesome5 as FA } from '@expo/vector-icons';
 
 // -------------------------------------------------
 // Local, dependency-free mono icons for RN
@@ -36,7 +37,25 @@ const Icons = {
   ChevronDown: makeIcon("⌄"),
   Globe2: makeIcon("🌐"),
 };
-const { Search, Plus, Filter, ThumbsUp, MessageCircle, Share2, Flame, Bookmark, Users, Library, Feather, MessageSquare, Zap, ChevronDown, Globe2 } = Icons;
+const makeFA = (name) => ({ size = 16, color = '#111' }) => (<FA name={name} size={size} color={color} />);
+const IconsFA = {
+  Search: makeFA('search'),
+  Plus: makeFA('plus'),
+  Filter: makeFA('filter'),
+  ThumbsUp: makeFA('thumbs-up'),
+  MessageCircle: makeFA('comment-alt'),
+  Share2: makeFA('share'),
+  Flame: makeFA('fire'),
+  Bookmark: makeFA('bookmark'),
+  Users: makeFA('users'),
+  Library: makeFA('book'),
+  Feather: makeFA('pen'),
+  MessageSquare: makeFA('comment-dots'),
+  Zap: makeFA('bolt'),
+  ChevronDown: makeFA('chevron-down'),
+  Globe2: makeFA('globe'),
+};
+const { Search, Plus, Filter, ThumbsUp, MessageCircle, Share2, Flame, Bookmark, Users, Library, Feather, MessageSquare, Zap, ChevronDown, Globe2 } = IconsFA;
 
 // -------------------------------------------------
 // Vaikhari – Activity Page (React Native, JSX)

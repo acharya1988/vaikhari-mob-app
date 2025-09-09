@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import TabBar from '../components/TabBar';
-import { Home, LibraryBig, MessagesSquare, PenLine, MoreHorizontal } from 'lucide-react-native';
+import { FontAwesome5 as FA } from '@expo/vector-icons';
 
 // Screens
 import HomeGlowFeed from '../screens/HomeGlowFeed';
@@ -85,12 +85,11 @@ function MoreStack() {
 export default function BottomTabs() {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
-      <Tab.Screen name="Home" component={HomeStack} options={{ tabBarIcon: ({ color, size }) => <Home color={color} size={size} /> }} />
-      <Tab.Screen name="Library" component={LibraryStack} options={{ tabBarIcon: ({ color, size }) => <LibraryBig color={color} size={size} /> }} />
-      <Tab.Screen name="Drifts" component={DriftsStack} options={{ tabBarIcon: ({ color, size }) => <MessagesSquare color={color} size={size} /> }} />
-      <Tab.Screen name="Chintana" component={ChintanaStack} options={{ tabBarIcon: ({ color, size }) => <PenLine color={color} size={size} /> }} />
-      <Tab.Screen name="More" component={MoreStack} options={{ tabBarIcon: ({ color, size }) => <MoreHorizontal color={color} size={size} /> }} />
+      <Tab.Screen name="HomeTab" component={HomeStack} options={{ title: 'Home', tabBarIcon: ({ color, size }) => <FA name="home" color={color} size={size} /> }} />
+      <Tab.Screen name="LibraryTab" component={LibraryStack} options={{ title: 'Library', tabBarIcon: ({ color, size }) => <FA name="book-open" color={color} size={size} /> }} />
+      <Tab.Screen name="DriftsTab" component={DriftsStack} options={{ title: 'Drifts', tabBarIcon: ({ color, size }) => <FA name="comments" color={color} size={size} /> }} />
+      <Tab.Screen name="ChintanaTab" component={ChintanaStack} options={{ title: 'Chintana', tabBarIcon: ({ color, size }) => <FA name="pen" color={color} size={size} /> }} />
+      <Tab.Screen name="MoreTab" component={MoreStack} options={{ title: 'More', tabBarIcon: ({ color, size }) => <FA name="ellipsis-h" color={color} size={size} /> }} />
     </Tab.Navigator>
   );
 }
-

@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-const family = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
+const family = Platform.select({ ios: 'Poppins_400Regular', android: 'Poppins_400Regular', default: 'Poppins_400Regular' });
 
 export const typeScale = {
   display120: 120,
@@ -15,12 +15,11 @@ export const typeScale = {
 };
 
 export const typography = {
-  h1: { fontSize: typeScale.display52, fontWeight: '700', fontFamily: family },
-  h2: { fontSize: typeScale.display72, fontWeight: '700', fontFamily: family },
-  title: { fontSize: typeScale.title28, fontWeight: '700', fontFamily: family },
-  subtitle: { fontSize: typeScale.title24, fontWeight: '600', fontFamily: family },
-  body: { fontSize: typeScale.body17, fontWeight: '400', fontFamily: family },
-  callout: { fontSize: typeScale.callout16, fontWeight: '500', fontFamily: family },
-  footnote: { fontSize: typeScale.footnote13, fontWeight: '400', fontFamily: family },
+  h1: { fontSize: typeScale.display52, fontFamily: 'Poppins_700Bold' },
+  h2: { fontSize: typeScale.display72, fontFamily: 'Poppins_700Bold' },
+  title: { fontSize: typeScale.title28, fontFamily: 'Poppins_700Bold' },
+  subtitle: { fontSize: typeScale.title24, fontFamily: 'Poppins_600SemiBold' },
+  body: { fontSize: typeScale.body17, fontFamily: family },
+  callout: { fontSize: typeScale.callout16, fontFamily: 'Poppins_600SemiBold' },
+  footnote: { fontSize: typeScale.footnote13, fontFamily: family },
 };
-

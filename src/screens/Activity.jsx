@@ -12,23 +12,7 @@ import {
   SafeAreaView,
   Platform,
 } from "react-native";
-import {
-  Search,
-  Plus,
-  Filter,
-  ThumbsUp,
-  MessageCircle,
-  Share2,
-  Flame,
-  Bookmark,
-  Users,
-  Library,
-  Feather,
-  MessageSquare,
-  Zap,
-  ChevronDown,
-  Globe2,
-} from "lucide-react-native";
+import { FontAwesome5 as FA } from '@expo/vector-icons';
 
 // -------------------------------------------------
 // Vaikhari – Activity Page (React Native, JSX)
@@ -118,10 +102,10 @@ const chintanaThreads = [
 const TAB_KEYS = ["feed", "myposts", "circle", "chintana"];
 
 const tabMeta = {
-  feed: { label: "Feed", icon: Globe2 },
-  myposts: { label: "My Posts", icon: Feather },
-  circle: { label: "Circle Feed", icon: Users },
-  chintana: { label: "Chintana", icon: MessageSquare },
+  feed: { label: 'Feed', icon: 'globe' },
+  myposts: { label: 'My Posts', icon: 'pen' },
+  circle: { label: 'Circle Feed', icon: 'users' },
+  chintana: { label: 'Chintana', icon: 'comment-dots' },
 };
 
 function Badge({ children, variant = "outline" }) {
@@ -162,8 +146,8 @@ function MobileHeader({ onSearch }) {
         <Text style={styles.title}>Vaikhari</Text>
         <Badge variant="secondary">Activity</Badge>
         <View style={{ marginLeft: "auto", flexDirection: "row" }}>
-          <IconButton ariaLabel="Search"><Search size={20} color="#111" /></IconButton>
-          <IconButton ariaLabel="Compose"><Plus size={20} color="#111" /></IconButton>
+          <IconButton ariaLabel="Search"><FA name="search" size={20} color="#111" /></IconButton>
+          <IconButton ariaLabel="Compose"><FA name="plus" size={20} color="#111" /></IconButton>
         </View>
       </View>
       <View style={{ marginTop: 8 }}>
@@ -187,10 +171,10 @@ function TabBar({ value, onChange }) {
       <View style={styles.tabList}>
         {TAB_KEYS.map((k) => {
           const active = value === k;
-          const Icon = tabMeta[k].icon;
+          const iconName = tabMeta[k].icon;
           return (
             <TouchableOpacity key={k} style={[styles.tabBtn, active && styles.tabBtnActive]} onPress={() => onChange(k)}>
-              <Icon size={16} color={active ? "#fff" : "#555"} />
+              <FA name={iconName} size={16} color={active ? '#fff' : '#555'} />
               <Text style={[styles.tabLabel, active && { color: "#fff" }]}>{tabMeta[k].label}</Text>
             </TouchableOpacity>
           );
@@ -204,9 +188,9 @@ function FilterBar() {
   return (
     <View style={styles.filterBar}>
       <TouchableOpacity style={styles.filterBtn}>
-        <Filter size={16} color="#111" />
+        <FA name="filter" size={16} color="#111" />
         <Text style={styles.filterText}>Filters</Text>
-        <ChevronDown size={16} color="#111" />
+        <FA name="chevron-down" size={16} color="#111" />
       </TouchableOpacity>
       <View style={{ flexDirection: "row", gap: 8 }}>
         <TouchableOpacity style={styles.tagBtn}><Text style={styles.tagText}>#Ayurveda</Text></TouchableOpacity>
@@ -248,16 +232,16 @@ function FeedCard({ post }) {
 
       <View style={styles.actionsRow}>
         <TouchableOpacity style={styles.actionBtn}>
-          <ThumbsUp size={16} color="#666" />
+          <FA name="thumbs-up" size={16} color="#666" />
           <Text style={styles.actionText}>{post.likes ?? 0}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn}>
-          <MessageCircle size={16} color="#666" />
+          <FA name="comment-alt" size={16} color="#666" />
           <Text style={styles.actionText}>{post.comments ?? 0}</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }} />
-        <TouchableOpacity style={styles.actionBtn}><Share2 size={16} color="#666" /><Text style={styles.actionText}>Share</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn}><Bookmark size={16} color="#666" /></TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtn}><FA name="share" size={16} color="#666" /><Text style={styles.actionText}>Share</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtn}><FA name="bookmark" size={16} color="#666" /></TouchableOpacity>
       </View>
     </View>
   );
@@ -293,8 +277,8 @@ function ThreadCard({ t }) {
       </View>
 
       <View style={styles.actionsRow}>
-        <View style={styles.actionBtn}><MessageCircle size={16} color="#666" /><Text style={styles.actionText}>{t.replies ?? 0}</Text></View>
-        <View style={styles.actionBtn}><Flame size={16} color="#666" /><Text style={styles.actionText}>Active</Text></View>
+        <View style={styles.actionBtn}><FA name="comment-alt" size={16} color="#666" /><Text style={styles.actionText}>{t.replies ?? 0}</Text></View>
+        <View style={styles.actionBtn}><FA name="fire" size={16} color="#666" /><Text style={styles.actionText}>Active</Text></View>
       </View>
     </View>
   );
@@ -303,7 +287,7 @@ function ThreadCard({ t }) {
 function EmptyState({ title, subtitle }) {
   return (
     <View style={styles.emptyCard}>
-      <View style={styles.emptyIcon}><Zap size={20} color="#111" /></View>
+      <View style={styles.emptyIcon}><FA name="bolt" size={20} color="#111" /></View>
       <Text style={styles.emptyTitle}>{title}</Text>
       <Text style={styles.emptySubtitle}>{subtitle}</Text>
       <TouchableOpacity style={styles.primaryBtn}><Text style={styles.primaryBtnText}>Create your first post</Text></TouchableOpacity>
@@ -374,7 +358,7 @@ export default function VaikhariActivityScreen() {
       <View style={styles.fabWrap} pointerEvents="box-none">
         <View style={styles.fabInner}>
           <TouchableOpacity style={styles.fab} onPress={() => setComposeOpen(true)}>
-            <Plus size={18} color="#fff" />
+            <FA name="plus" size={18} color="#fff" />
             <Text style={styles.fabText}>Compose</Text>
           </TouchableOpacity>
         </View>
@@ -387,10 +371,10 @@ export default function VaikhariActivityScreen() {
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>Compose</Text>
             <View style={styles.sheetGrid}>
-              <ComposeTileRN icon={<Feather size={18} color="#111" />} title="Post" />
-              <ComposeTileRN icon={<MessageSquare size={18} color="#111" />} title="Chintana" />
-              <ComposeTileRN icon={<Users size={18} color="#111" />} title="Circle Post" />
-              <ComposeTileRN icon={<Library size={18} color="#111" />} title="Book Note" />
+              <ComposeTileRN icon={<FA name="pen" size={18} color="#111" />} title="Post" />
+              <ComposeTileRN icon={<FA name="comment-dots" size={18} color="#111" />} title="Chintana" />
+              <ComposeTileRN icon={<FA name="users" size={18} color="#111" />} title="Circle Post" />
+              <ComposeTileRN icon={<FA name="book" size={18} color="#111" />} title="Book Note" />
             </View>
             <TouchableOpacity style={styles.sheetClose} onPress={() => setComposeOpen(false)}>
               <Text style={styles.sheetCloseText}>Close</Text>
