@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,41 +6,33 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
+  ScrollView,
   Image,
   Modal,
   SafeAreaView,
   Platform,
 } from "react-native";
-
-// -------------------------------------------------
-// Local, dependency-free mono icons for RN
-// (avoids bundler issues with lucide-react-native)
-// -------------------------------------------------
-const makeIcon = (glyph) => ({ size = 16, color = "#111" }) => (
-  <Text style={{ fontSize: size, color, includeFontPadding: false, textAlignVertical: "center" }}>{glyph}</Text>
-);
-const Icons = {
-  Search: makeIcon("🔍"),
-  Plus: makeIcon("＋"),
-  Filter: makeIcon("⚲"),
-  ThumbsUp: makeIcon("👍"),
-  MessageCircle: makeIcon("💬"),
-  Share2: makeIcon("↗"),
-  Flame: makeIcon("🔥"),
-  Bookmark: makeIcon("🔖"),
-  Users: makeIcon("👥"),
-  Library: makeIcon("📚"),
-  Feather: makeIcon("✒️"),
-  MessageSquare: makeIcon("💬"),
-  Zap: makeIcon("⚡"),
-  ChevronDown: makeIcon("⌄"),
-  Globe2: makeIcon("🌐"),
-};
-const { Search, Plus, Filter, ThumbsUp, MessageCircle, Share2, Flame, Bookmark, Users, Library, Feather, MessageSquare, Zap, ChevronDown, Globe2 } = Icons;
+import {
+  Search,
+  Plus,
+  Filter,
+  ThumbsUp,
+  MessageCircle,
+  Share2,
+  Flame,
+  Bookmark,
+  Users,
+  Library,
+  Feather,
+  MessageSquare,
+  Zap,
+  ChevronDown,
+  Globe2,
+} from "lucide-react-native";
 
 // -------------------------------------------------
 // Vaikhari – Activity Page (React Native, JSX)
-// Mobile-first UX adapted for native.
+// Mobile-first UX adapted for native. No `use client`.
 // -------------------------------------------------
 
 // Sample data (replace with API calls)
@@ -199,7 +191,7 @@ function TabBar({ value, onChange }) {
           return (
             <TouchableOpacity key={k} style={[styles.tabBtn, active && styles.tabBtnActive]} onPress={() => onChange(k)}>
               <Icon size={16} color={active ? "#fff" : "#555"} />
-              <Text style={[styles.tabLabel, active && { color: "#fff", marginLeft: 6 }]}>{tabMeta[k].label}</Text>
+              <Text style={[styles.tabLabel, active && { color: "#fff" }]}>{tabMeta[k].label}</Text>
             </TouchableOpacity>
           );
         })}
@@ -213,11 +205,11 @@ function FilterBar() {
     <View style={styles.filterBar}>
       <TouchableOpacity style={styles.filterBtn}>
         <Filter size={16} color="#111" />
-        <Text style={[styles.filterText, { marginHorizontal: 6 }]}>Filters</Text>
+        <Text style={styles.filterText}>Filters</Text>
         <ChevronDown size={16} color="#111" />
       </TouchableOpacity>
-      <View style={{ flexDirection: "row" }}>
-        <TouchableOpacity style={[styles.tagBtn, { marginRight: 8 }]}><Text style={styles.tagText}>#Ayurveda</Text></TouchableOpacity>
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <TouchableOpacity style={styles.tagBtn}><Text style={styles.tagText}>#Ayurveda</Text></TouchableOpacity>
         <TouchableOpacity style={styles.tagBtn}><Text style={styles.tagText}>#Sanskrit</Text></TouchableOpacity>
       </View>
     </View>
@@ -228,7 +220,7 @@ function FeedCard({ post }) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeaderRow}>
-        <View style={[styles.avatar, { marginRight: 10 }]}>
+        <View style={styles.avatar}>
           {post.avatar ? (
             <Image source={{ uri: post.avatar }} style={styles.avatarImg} />
           ) : (
@@ -237,7 +229,7 @@ function FeedCard({ post }) {
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text numberOfLines={1} style={styles.author}>{post.author}</Text>
-          <Text style={styles.meta}>{(post.handle || "@vaikhari") + " · " + post.time}</Text>
+          <Text style={styles.meta}>{(post.handle ?? "@vaikhari") + " · " + post.time}</Text>
         </View>
         {post.circle ? <Badge variant="secondary">{post.circle}</Badge> : null}
       </View>
@@ -245,7 +237,7 @@ function FeedCard({ post }) {
       <View style={{ marginTop: 4 }}>
         {post.title ? <Text style={styles.cardTitle}>{post.title}</Text> : null}
         <Text style={styles.cardBody}>{post.content}</Text>
-        {post.tags && post.tags.length ? (
+        {post.tags?.length ? (
           <View style={styles.tagsRow}>
             {post.tags.map((t) => (
               <Chip key={t}>{t}</Chip>
@@ -254,17 +246,17 @@ function FeedCard({ post }) {
         ) : null}
       </View>
 
-      <View style={[styles.actionsRow, { marginTop: 10 }]}>
-        <TouchableOpacity style={[styles.actionBtn, { marginRight: 12 }]}>
+      <View style={styles.actionsRow}>
+        <TouchableOpacity style={styles.actionBtn}>
           <ThumbsUp size={16} color="#666" />
-          <Text style={[styles.actionText, { marginLeft: 6 }]}>{post.likes != null ? post.likes : 0}</Text>
+          <Text style={styles.actionText}>{post.likes ?? 0}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionBtn, { marginRight: 12 }]}>
+        <TouchableOpacity style={styles.actionBtn}>
           <MessageCircle size={16} color="#666" />
-          <Text style={[styles.actionText, { marginLeft: 6 }]}>{post.comments != null ? post.comments : 0}</Text>
+          <Text style={styles.actionText}>{post.comments ?? 0}</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }} />
-        <TouchableOpacity style={[styles.actionBtn, { marginRight: 12 }]}><Share2 size={16} color="#666" /><Text style={[styles.actionText, { marginLeft: 6 }]}>Share</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtn}><Share2 size={16} color="#666" /><Text style={styles.actionText}>Share</Text></TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn}><Bookmark size={16} color="#666" /></TouchableOpacity>
       </View>
     </View>
@@ -275,7 +267,7 @@ function ThreadCard({ t }) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeaderRow}>
-        <View style={[styles.avatar, { marginRight: 10 }]}>
+        <View style={styles.avatar}>
           {t.avatar ? (
             <Image source={{ uri: t.avatar }} style={styles.avatarImg} />
           ) : (
@@ -284,14 +276,14 @@ function ThreadCard({ t }) {
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text numberOfLines={1} style={styles.author}>{t.author}</Text>
-          <Text style={styles.meta}>{(t.stance || "Chintana") + " · " + t.time}</Text>
+          <Text style={styles.meta}>{(t.stance ?? "Chintana") + " · " + t.time}</Text>
         </View>
         <Badge>Chintana</Badge>
       </View>
 
       <View style={{ marginTop: 4 }}>
         <Text style={styles.cardBody}>{t.claim}</Text>
-        {t.tags && t.tags.length ? (
+        {t.tags?.length ? (
           <View style={styles.tagsRow}>
             {t.tags.map((tg) => (
               <Chip key={tg}>{tg}</Chip>
@@ -300,9 +292,9 @@ function ThreadCard({ t }) {
         ) : null}
       </View>
 
-      <View style={[styles.actionsRow, { marginTop: 10 }]}>
-        <View style={[styles.actionBtn, { marginRight: 12 }]}><MessageCircle size={16} color="#666" /><Text style={[styles.actionText, { marginLeft: 6 }]}>{t.replies != null ? t.replies : 0}</Text></View>
-        <View style={styles.actionBtn}><Flame size={16} color="#666" /><Text style={[styles.actionText, { marginLeft: 6 }]}>Active</Text></View>
+      <View style={styles.actionsRow}>
+        <View style={styles.actionBtn}><MessageCircle size={16} color="#666" /><Text style={styles.actionText}>{t.replies ?? 0}</Text></View>
+        <View style={styles.actionBtn}><Flame size={16} color="#666" /><Text style={styles.actionText}>Active</Text></View>
       </View>
     </View>
   );
@@ -311,10 +303,10 @@ function ThreadCard({ t }) {
 function EmptyState({ title, subtitle }) {
   return (
     <View style={styles.emptyCard}>
-      <View style={[styles.emptyIcon, { marginBottom: 8 }]}><Zap size={20} color="#111" /></View>
+      <View style={styles.emptyIcon}><Zap size={20} color="#111" /></View>
       <Text style={styles.emptyTitle}>{title}</Text>
-      <Text style={[styles.emptySubtitle, { marginTop: 4 }]}>{subtitle}</Text>
-      <TouchableOpacity style={[styles.primaryBtn, { marginTop: 8 }]}><Text style={styles.primaryBtnText}>Create your first post</Text></TouchableOpacity>
+      <Text style={styles.emptySubtitle}>{subtitle}</Text>
+      <TouchableOpacity style={styles.primaryBtn}><Text style={styles.primaryBtnText}>Create your first post</Text></TouchableOpacity>
     </View>
   );
 }
@@ -326,12 +318,12 @@ export default function VaikhariActivityScreen() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const f = (arr) => (q ? arr.filter((p) => (`${(p.title || "")} ${p.content} ${p.author}`).toLowerCase().includes(q)) : arr);
+    const f = (arr) => (q ? arr.filter((p) => `${p.title ?? ""} ${p.content} ${p.author}`.toLowerCase().includes(q)) : arr);
     return {
       feed: f(sampleFeed),
       my: f(myPosts),
       circle: f(circleFeed),
-      threads: q ? chintanaThreads.filter((t) => (`${t.claim} ${t.author}`).toLowerCase().includes(q)) : chintanaThreads,
+      threads: q ? chintanaThreads.filter((t) => `${t.claim} ${t.author}`.toLowerCase().includes(q)) : chintanaThreads,
     };
   }, [query]);
 
@@ -406,26 +398,6 @@ export default function VaikhariActivityScreen() {
           </View>
         </View>
       </Modal>
-
-      {/* DEV sanity checks */}
-      {__DEV__ ? (
-        <View style={{ position: "absolute", left: -9999 }}>
-          <Text>
-            {(() => {
-              try {
-                console.assert(Array.isArray(sampleFeed) && sampleFeed.length > 0, "sampleFeed present");
-                const q = "hridaya";
-                const hits = sampleFeed.filter((p) => (`${(p.title || "")} ${p.content}`).toLowerCase().includes(q)).length;
-                console.assert(hits >= 1, "filtering finds hridaya content");
-                console.assert(TAB_KEYS.includes("feed") && TAB_KEYS.includes("chintana"), "tab keys ok");
-                return "ok";
-              } catch (e) {
-                return "dev-test-failed";
-              }
-            })()}
-          </Text>
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -452,7 +424,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     paddingTop: Platform.select({ ios: 6, android: 6, default: 6 }),
   },
-  headerRow: { flexDirection: "row", alignItems: "center" },
+  headerRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   title: { fontSize: 20, fontWeight: "700", color: "#111" },
   iconBtn: { height: 36, width: 36, alignItems: "center", justifyContent: "center", borderRadius: 18 },
   searchInput: {
@@ -475,8 +447,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
     paddingVertical: 10,
-    paddingHorizontal: 10,
     marginHorizontal: 4,
     borderRadius: 16,
     backgroundColor: "#F3F4F6",
@@ -484,15 +456,15 @@ const styles = StyleSheet.create({
   tabBtnActive: { backgroundColor: "#111" },
   tabLabel: { fontSize: 13, color: "#555", fontWeight: "600" },
 
-  filterBar: { paddingHorizontal: 12, paddingVertical: 8, flexDirection: "row", alignItems: "center" },
-  filterBtn: { flexDirection: "row", alignItems: "center", paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 999 },
+  filterBar: { paddingHorizontal: 12, paddingVertical: 8, flexDirection: "row", alignItems: "center", gap: 8 },
+  filterBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 999 },
   filterText: { fontSize: 13, fontWeight: "600", color: "#111" },
   tagBtn: { borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 },
   tagText: { fontSize: 13, color: "#111" },
 
-  list: { padding: 12 },
-  card: { borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 16, padding: 12, backgroundColor: "#fff", marginBottom: 12 },
-  cardHeaderRow: { flexDirection: "row", alignItems: "center" },
+  list: { padding: 12, gap: 12 },
+  card: { borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 16, padding: 12, backgroundColor: "#fff" },
+  cardHeaderRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   avatar: { height: 36, width: 36, borderRadius: 18, backgroundColor: "#111", alignItems: "center", justifyContent: "center" },
   avatarImg: { height: 36, width: 36, borderRadius: 18 },
   avatarFallback: { color: "#fff", fontWeight: "700" },
@@ -500,14 +472,14 @@ const styles = StyleSheet.create({
   meta: { fontSize: 12, color: "#6B7280" },
   cardTitle: { fontWeight: "700", color: "#111", marginTop: 4 },
   cardBody: { color: "#111", opacity: 0.9, lineHeight: 20 },
-  tagsRow: { flexDirection: "row", flexWrap: "wrap", marginTop: 8 },
-  chip: { borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, backgroundColor: "#fff", marginRight: 8, marginBottom: 8 },
+  tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
+  chip: { borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, backgroundColor: "#fff" },
   chipText: { fontSize: 12, color: "#111" },
-  actionsRow: { flexDirection: "row", alignItems: "center" },
-  actionBtn: { flexDirection: "row", alignItems: "center" },
+  actionsRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 10 },
+  actionBtn: { flexDirection: "row", alignItems: "center", gap: 6 },
   actionText: { fontSize: 13, color: "#444" },
 
-  emptyCard: { alignItems: "center", borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 16, padding: 24, margin: 12 },
+  emptyCard: { alignItems: "center", gap: 8, borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 16, padding: 24, margin: 12 },
   emptyIcon: { borderWidth: 1, borderColor: "#E5E5E5", padding: 8, borderRadius: 999 },
   emptyTitle: { fontWeight: "700", color: "#111" },
   emptySubtitle: { color: "#6B7280", textAlign: "center" },
@@ -516,8 +488,8 @@ const styles = StyleSheet.create({
 
   fabWrap: { position: "absolute", left: 0, right: 0, bottom: 12 },
   fabInner: { maxWidth: 640, alignSelf: "center", width: "100%", paddingHorizontal: 12 },
-  fab: { height: 48, borderRadius: 999, backgroundColor: "#111", alignItems: "center", justifyContent: "center", flexDirection: "row", paddingHorizontal: 16, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
-  fabText: { color: "#fff", fontWeight: "700", fontSize: 16, marginLeft: 8 },
+  fab: { height: 48, borderRadius: 999, backgroundColor: "#111", alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
+  fabText: { color: "#fff", fontWeight: "700", fontSize: 16 },
 
   badge: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: 999, borderWidth: 1, borderColor: "#E5E5E5" },
   badgeText: { fontSize: 12, color: "#111" },
@@ -526,8 +498,7 @@ const styles = StyleSheet.create({
   sheet: { backgroundColor: "#fff", borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16 },
   sheetHandle: { alignSelf: "center", height: 4, width: 40, borderRadius: 2, backgroundColor: "#E5E5E5", marginBottom: 10 },
   sheetTitle: { fontWeight: "700", color: "#111", marginBottom: 10 },
-  sheetGrid: { flexDirection: "row", flexWrap: "wrap" },
-  composeTile: { flexBasis: "48%", flexDirection: "row", alignItems: "center", padding: 12, borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 12, margin: 4 },
+  sheetGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   sheetClose: { marginTop: 12, alignSelf: "center", paddingVertical: 8, paddingHorizontal: 16 },
   sheetCloseText: { color: "#111", fontWeight: "600" },
 });

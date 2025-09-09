@@ -1,7 +1,9 @@
+import 'react-native-gesture-handler';
+import 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import AppNavigator from "./src/navigation/AppNavigator";
+import AppNavigation from "./src/navigation";
 import Toast from "react-native-toast-message";
 export default function App() {
   // return (
@@ -10,12 +12,12 @@ export default function App() {
   //     <StatusBar style="auto" />
   //   </View>
   // );
-  return(
+  return (
     <>
-    <AppNavigator />;
-    <Toast/>
+      <AppNavigation />
+      <Toast />
     </>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
