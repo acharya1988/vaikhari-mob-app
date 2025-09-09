@@ -3,6 +3,7 @@ import React from 'react';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { enableScreens } from 'react-native-screens';
 import RootNavigator from './RootNavigator';
+import { ThemeProvider, useThemeMode } from '../theme/ThemeProvider';
 
 
 const theme = {
@@ -15,11 +16,24 @@ const theme = {
   },
 };
 
-export default function AppNavigation() {
+function Nav() {
+  const { colors } = useThemeMode();
   enableScreens(true);
+  const themed = {
+    ...DefaultTheme,
+    colors: { ...DefaultTheme.colors, background: colors.bg, text: colors.text, border: colors.border },
+  };
   return (
-    <NavigationContainer theme={theme}>
+    <NavigationContainer theme={themed}>
       <RootNavigator />
     </NavigationContainer>
+  );
+}
+
+export default function AppNavigation() {
+  return (
+    <ThemeProvider>
+      <Nav />
+    </ThemeProvider>
   );
 }

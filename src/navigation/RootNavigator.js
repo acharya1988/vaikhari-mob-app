@@ -1,6 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import BottomTabs from './BottomTabs';
+import DrawerNavigator from './DrawerNavigator';
 import Onboarding from '../screens/Onboarding';
 import SignIn from '../screens/SignIn';
 import MFA from '../screens/MFA';
@@ -24,14 +24,14 @@ const Stack = createNativeStackNavigator();
 
 export default function RootNavigator() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Activity">
+    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Main">
       {/* Auth/onboarding flow (mock) */}
       <Stack.Screen name="Onboarding" component={Onboarding} />
       <Stack.Screen name="SignIn" component={SignIn} />
       <Stack.Screen name="MFA" component={MFA} />
 
-      {/* App tabs */}
-      <Stack.Screen name="RootTabs" component={BottomTabs} />
+      {/* App main drawer */}
+      <Stack.Screen name="Main" component={DrawerNavigator} />
 
       {/* Global routes for easy navigate('ScreenName') */}
       <Stack.Screen name="Circle" component={Circle} />

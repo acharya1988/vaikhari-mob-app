@@ -17,7 +17,7 @@ import { FontAwesome5 as FA } from '@expo/vector-icons';
 // Local, dependency-free mono icons for RN
 // (avoids bundler issues with lucide-react-native)
 // -------------------------------------------------
-const makeIcon = (glyph) => ({ size = 16, color = "#111" }) => (
+const makeIcon = (glyph) => ({ size = 14, color = "#111" }) => (
   <Text style={{ fontSize: size, color, includeFontPadding: false, textAlignVertical: "center" }}>{glyph}</Text>
 );
 const Icons = {

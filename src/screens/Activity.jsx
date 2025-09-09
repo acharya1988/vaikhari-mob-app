@@ -1,4 +1,11 @@
-import React, { useMemo, useState, useRef, useEffect } from "react";
+// Vaikhari — Activity + Today (Stories) — Viral UX Revamp
+// -------------------------------------------------------------
+// Mobile-first, orientation-aware, international-ready, no backend.
+// Pure React Native (Expo-friendly). Uses @expo/vector-icons (FA5).
+// Drop into: src/screens/ActivityViralToday.jsx (or .tsx with types)
+// -------------------------------------------------------------
+
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,36 +18,69 @@ import {
   Modal,
   SafeAreaView,
   Platform,
-} from "react-native";
+  RefreshControl,
+  useWindowDimensions,
+  Appearance,
+} from 'react-native';
 import { FontAwesome5 as FA } from '@expo/vector-icons';
+import AppHeader from '../components/AppHeader';
+import ContextBottomBar from '../components/ContextBottomBar';
 
-// -------------------------------------------------
-// Vaikhari – Activity Page (React Native, JSX)
-// Mobile-first UX adapted for native. No `use client`.
-// -------------------------------------------------
+// -------------------------------------------------------------
+// THEME (auto light/dark + tokens)
+// -------------------------------------------------------------
+const palette = {
+  light: {
+    bg: '#FFFFFF',
+    bgMuted: '#F7F7F7',
+    text: '#0F172A',
+    textMuted: '#6B7280',
+    border: '#E5E7EB',
+    primary: '#0F172A',
+    card: '#FFFFFF',
+    chipBG: '#FFFFFF',
+  },
+  dark: {
+    bg: '#0B0F17',
+    bgMuted: '#0F1522',
+    text: '#E5E7EB',
+    textMuted: '#9CA3AF',
+    border: '#1F2937',
+    primary: '#E5E7EB',
+    card: '#0E1420',
+    chipBG: '#0B0F17',
+  },
+};
 
-// Sample data (replace with API calls)
+const useTheme = () => {
+  const scheme = Appearance.getColorScheme?.() ?? 'light';
+  return scheme === 'dark' ? palette.dark : palette.light;
+};
+
+// -------------------------------------------------------------
+// Mock Data (replace with API)
+// -------------------------------------------------------------
 const sampleFeed = [
   {
-    id: "p1",
-    author: "Kalpatantra Vaidya Gurukula",
-    handle: "@kalpatantra",
-    time: "2h",
-    title: "Aṣṭāṅga Hṛdaya – Sutrasthāna #1",
+    id: 'p1',
+    author: 'Kalpatantra Vaidya Gurukula',
+    handle: '@kalpatantra',
+    time: '2h',
+    title: 'Aṣṭāṅga Hṛdaya – Sutrasthāna #1',
     content:
-      "Opening discussion on Hita–Ahita and Sukha–Dukha in daily regimen. Share your notes from clinical observation.",
-    tags: ["Sutra", "Dinacharya"],
+      'Opening discussion on Hita–Ahita and Sukha–Dukha in daily regimen. Share your notes from clinical observation.',
+    tags: ['Sutra', 'Dinacharya'],
     likes: 128,
     comments: 32,
   },
   {
-    id: "p2",
-    author: "Vaikhari Library",
-    handle: "@vaikhari",
-    time: "6h",
+    id: 'p2',
+    author: 'Vaikhari Library',
+    handle: '@vaikhari',
+    time: '6h',
     content:
-      "New annotated edition of Aṣṭāṇga Hṛdaya added. Includes verse‑wise commentary and cross‑links to Ṣārīra.",
-    tags: ["Library", "Announcement"],
+      'New annotated edition of Aṣṭāṅga Hṛdaya added. Includes verse‑wise commentary and cross‑links to Śārīra.',
+    tags: ['Library', 'Announcement'],
     likes: 76,
     comments: 11,
   },
@@ -48,14 +88,13 @@ const sampleFeed = [
 
 const myPosts = [
   {
-    id: "m1",
-    author: "You",
-    handle: "@acharya",
-    time: "1d",
-    title: "On Viruddhāhāra pairs",
-    content:
-      "Quick matrix of food incompatibilities I use in OPDO diet sheets.",
-    tags: ["Diet", "Viruddha"],
+    id: 'm1',
+    author: 'You',
+    handle: '@acharya',
+    time: '1d',
+    title: 'On Viruddhāhāra pairs',
+    content: 'Quick matrix of food incompatibilities I use in OPDO diet sheets.',
+    tags: ['Diet', 'Viruddha'],
     likes: 44,
     comments: 9,
   },
@@ -63,14 +102,14 @@ const myPosts = [
 
 const circleFeed = [
   {
-    id: "c1",
-    author: "Sanskrit Study Circle",
-    handle: "@samskrita",
-    time: "4h",
+    id: 'c1',
+    author: 'Sanskrit Study Circle',
+    handle: '@samskrita',
+    time: '4h',
     content:
-      "Paninian sandhi drill tomorrow 7PM. Bring your notes on savarṇa dīrgha.",
-    circle: "Sanskrit Study Circle",
-    tags: ["Sanskrit", "Event"],
+      'Pāṇinian sandhi drill tomorrow 7PM. Bring your notes on savarṇa dīrgha.',
+    circle: 'Sanskrit Study Circle',
+    tags: ['Sanskrit', 'Event'],
     likes: 33,
     comments: 6,
   },
@@ -78,104 +117,192 @@ const circleFeed = [
 
 const chintanaThreads = [
   {
-    id: "t1",
-    author: "Dr. Uma",
-    time: "3h",
+    id: 't1',
+    author: 'Dr. Uma',
+    time: '3h',
     claim:
-      "Is tridoṣa sama truly the baseline of health, or should prakṛti‑specific bias be treated as ‘normal’?",
-    tags: ["Chintana", "Doṣa"],
+      'Is tridoṣa sama truly the baseline of health, or should prakṛti‑specific bias be treated as “normal”?',
+    tags: ['Chintana', 'Doṣa'],
     replies: 21,
-    stance: "Prashna",
+    stance: 'Prashna',
   },
   {
-    id: "t2",
-    author: "Dr. Priya",
-    time: "1d",
+    id: 't2',
+    author: 'Dr. Priya',
+    time: '1d',
     claim:
-      "For Āma‑dominant jvara, is langhana without deepana a therapeutically weaker first step?",
-    tags: ["Jvara", "Langhana"],
+      'For Āma‑dominant jvara, is langhana without dīpana a therapeutically weaker first step?',
+    tags: ['Jvara', 'Langhana'],
     replies: 12,
-    stance: "Purva Paksha",
+    stance: 'Purva Paksha',
   },
 ];
 
-const TAB_KEYS = ["feed", "myposts", "circle", "chintana"];
+const highlights = [
+  { id: 'h1', title: 'Live: Śloka Jam', img: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=640' },
+  { id: 'h2', title: 'OPDO Diet Lab', img: 'https://images.unsplash.com/photo-1506806732259-39c2d0268443?w=640' },
+  { id: 'h3', title: 'GranthaDNA Map', img: 'https://images.unsplash.com/photo-1482192596544-9eb780fc7f66?w=640' },
+];
 
+const suggested = [
+  { id: 's1', title: 'Follow: Āyurveda Research', handle: '@ayuresearch' },
+  { id: 's2', title: 'Join: Chintana Fridays', handle: '@chintana' },
+];
+
+const trendingTags = ['#Ayurveda', '#Sanskrit', '#Dinacharya', '#Diet', '#CaseNotes'];
+
+// Today stories (story system)
+const todayStories = [
+  { id: 'st0', me: true, title: 'Add story', img: 'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?w=256' },
+  { id: 'st1', title: 'Kalpatantra', img: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=256' },
+  { id: 'st2', title: 'Vaikhari', img: 'https://images.unsplash.com/photo-1517512006864-7edc3b933137?w=256' },
+  { id: 'st3', title: 'Sanskrit Circle', img: 'https://images.unsplash.com/photo-1509099836639-18ba1795216d?w=256' },
+];
+
+// Recently announced books (department)
+const recentBooks = [
+  { id: 'b1', title: 'Rasaśāstra Notes', dept: 'Kayachikitsa', img: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=640' },
+  { id: 'b2', title: 'Sūtra Digest 2025', dept: 'Samhita', img: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0ea?w=640' },
+  { id: 'b3', title: 'Herb Atlas Vol. 2', dept: 'Dravyaguna', img: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=640' },
+];
+
+const TAB_KEYS = ['feed', 'myposts', 'circle', 'chintana'];
 const tabMeta = {
   feed: { label: 'Feed', icon: 'globe' },
   myposts: { label: 'My Posts', icon: 'pen' },
-  circle: { label: 'Circle Feed', icon: 'users' },
+  circle: { label: 'Circles', icon: 'users' },
   chintana: { label: 'Chintana', icon: 'comment-dots' },
 };
 
-function Badge({ children, variant = "outline" }) {
+// -------------------------------------------------------------
+// UI primitives
+// -------------------------------------------------------------
+function Badge({ children, variant = 'outline', theme }) {
   return (
     <View
       style={[
         styles.badge,
-        variant === "secondary" && { backgroundColor: "#F2F2F2", borderColor: "#E5E5E5" },
+        { borderColor: theme.border },
+        variant === 'secondary' && { backgroundColor: theme.bgMuted },
       ]}
     >
-      <Text style={styles.badgeText}>{children}</Text>
+      <Text style={[styles.badgeText, { color: theme.text }]}>{children}</Text>
     </View>
   );
 }
 
-function IconButton({ onPress, children, ariaLabel }) {
+function IconButton({ onPress, children, ariaLabel, theme }) {
   return (
-    <TouchableOpacity accessibilityLabel={ariaLabel} style={styles.iconBtn} onPress={onPress}>
+    <TouchableOpacity
+      accessibilityLabel={ariaLabel}
+      style={[styles.iconBtn, { backgroundColor: 'transparent' }]}
+      onPress={onPress}
+    >
       {children}
     </TouchableOpacity>
   );
 }
 
-function Chip({ children }) {
+function Chip({ children, theme }) {
   return (
-    <View style={styles.chip}>
-      <Text style={styles.chipText}>#{children}</Text>
+    <View style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.chipBG }]}>
+      <Text style={[styles.chipText, { color: theme.text }]}>{children}</Text>
     </View>
   );
 }
 
-function MobileHeader({ onSearch }) {
-  const [value, setValue] = useState("");
+function TodayStories({ theme }) {
   return (
-    <View style={styles.headerWrap}>
+    <View style={styles.storiesWrap}>
+      <Text style={[styles.sectionTitle, { color: theme.text, paddingHorizontal: 4 }]}>Today</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.storiesRow]}> 
+        {todayStories.map((s) => (
+          <TouchableOpacity key={s.id} style={styles.story}>
+            <View style={[styles.storyRing, s.me && styles.storyAddRing]}> 
+              <Image source={{ uri: s.img }} style={styles.storyImg} />
+            </View>
+            <Text style={[styles.storyLabel, { color: theme.text }]} numberOfLines={1}>{s.title}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+function BooksCarousel({ theme }) {
+  return (
+    <View style={{ paddingTop: 8 }}>
+      <Text style={[styles.sectionTitle, { color: theme.text, paddingHorizontal: 4 }]}>Latest releases</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 8, paddingRight: 12, paddingLeft: 4, gap: 12 }}>
+        {recentBooks.map((b) => (
+          <TouchableOpacity key={b.id} style={[styles.bookCard, { borderColor: theme.border, backgroundColor: theme.card }]}> 
+            <Image source={{ uri: b.img }} style={styles.bookImg} />
+            <View style={{ padding: 8 }}>
+              <Text style={{ color: theme.text, fontWeight: '700' }} numberOfLines={1}>{b.title}</Text>
+              <Text style={{ color: theme.textMuted, fontSize: 12 }} numberOfLines={1}>{b.dept}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+function MobileHeader({ onSearch, theme, onOpenCompose }) {
+  const [value, setValue] = useState('');
+  return (
+    <View style={[styles.headerWrap, { borderColor: theme.border, backgroundColor: theme.bg }]}> 
       <SafeAreaView />
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Vaikhari</Text>
-        <Badge variant="secondary">Activity</Badge>
-        <View style={{ marginLeft: "auto", flexDirection: "row" }}>
-          <IconButton ariaLabel="Search"><FA name="search" size={20} color="#111" /></IconButton>
-          <IconButton ariaLabel="Compose"><FA name="plus" size={20} color="#111" /></IconButton>
+        <Text style={[styles.title, { color: theme.text }]}>Vaikhari</Text>
+        <Badge variant="secondary" theme={theme}>Activity</Badge>
+        <View style={{ marginLeft: 'auto', flexDirection: 'row' }}>
+          <IconButton ariaLabel="Search" theme={theme}>
+            <FA name="search" size={20} color={theme.text} />
+          </IconButton>
+          <IconButton ariaLabel="Compose" theme={theme} onPress={onOpenCompose}>
+            <FA name="plus" size={20} color={theme.text} />
+          </IconButton>
         </View>
       </View>
-      <View style={{ marginTop: 8 }}>
+
+      {/* Search + Filter on same row */}
+      <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <TextInput
           placeholder="Search posts, circles, threads…"
-          placeholderTextColor="#888"
-          style={styles.searchInput}
+          placeholderTextColor={theme.textMuted}
+          style={[styles.searchInput, { flex: 1, borderColor: theme.border, backgroundColor: theme.bgMuted, color: theme.text }]}
           value={value}
           onChangeText={setValue}
           onSubmitEditing={() => onSearch(value)}
           returnKeyType="search"
         />
       </View>
+
+          {/* Stories below tags */}
+      <TodayStories theme={theme} />
+
+      {/* Books carousel below stories */}
+      <BooksCarousel theme={theme} />
     </View>
   );
 }
 
-function TabBar({ value, onChange }) {
+function TabBar({ value, onChange, theme }) {
   return (
-    <View style={styles.tabBarWrap}>
+    <View style={[styles.tabBarWrap, { borderColor: theme.border, backgroundColor: theme.bg }]}> 
       <View style={styles.tabList}>
         {TAB_KEYS.map((k) => {
           const active = value === k;
           const iconName = tabMeta[k].icon;
           return (
-            <TouchableOpacity key={k} style={[styles.tabBtn, active && styles.tabBtnActive]} onPress={() => onChange(k)}>
-              <FA name={iconName} size={16} color={active ? '#fff' : '#555'} />
-              <Text style={[styles.tabLabel, active && { color: "#fff" }]}>{tabMeta[k].label}</Text>
+            <TouchableOpacity
+              key={k}
+              style={[styles.tabBtn, { backgroundColor: active ? theme.primary : theme.bgMuted }]}
+              onPress={() => onChange(k)}
+            >
+              <FA name={iconName} size={16} color={active ? palette.light.bg : theme.textMuted} />
+              <Text style={[styles.tabLabel, { color: active ? palette.light.bg : theme.text }]}>{tabMeta[k].label}</Text>
             </TouchableOpacity>
           );
         })}
@@ -184,47 +311,31 @@ function TabBar({ value, onChange }) {
   );
 }
 
-function FilterBar() {
+function FeedCard({ post, theme, onShare }) {
   return (
-    <View style={styles.filterBar}>
-      <TouchableOpacity style={styles.filterBtn}>
-        <FA name="filter" size={16} color="#111" />
-        <Text style={styles.filterText}>Filters</Text>
-        <FA name="chevron-down" size={16} color="#111" />
-      </TouchableOpacity>
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        <TouchableOpacity style={styles.tagBtn}><Text style={styles.tagText}>#Ayurveda</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.tagBtn}><Text style={styles.tagText}>#Sanskrit</Text></TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
-function FeedCard({ post }) {
-  return (
-    <View style={styles.card}>
+    <View style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}> 
       <View style={styles.cardHeaderRow}>
-        <View style={styles.avatar}>
+        <View style={[styles.avatar, { backgroundColor: theme.primary }]}> 
           {post.avatar ? (
             <Image source={{ uri: post.avatar }} style={styles.avatarImg} />
           ) : (
-            <Text style={styles.avatarFallback}>{post.author.slice(0, 2).toUpperCase()}</Text>
+            <Text style={[styles.avatarFallback, { color: palette.light.bg }]}>{post.author.slice(0, 2).toUpperCase()}</Text>
           )}
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text numberOfLines={1} style={styles.author}>{post.author}</Text>
-          <Text style={styles.meta}>{(post.handle ?? "@vaikhari") + " · " + post.time}</Text>
+          <Text numberOfLines={1} style={[styles.author, { color: theme.text }]}>{post.author}</Text>
+          <Text style={[styles.meta, { color: theme.textMuted }]}>{(post.handle ?? '@vaikhari') + ' · ' + post.time}</Text>
         </View>
-        {post.circle ? <Badge variant="secondary">{post.circle}</Badge> : null}
+        {post.circle ? <Badge variant="secondary" theme={theme}>{post.circle}</Badge> : null}
       </View>
 
       <View style={{ marginTop: 4 }}>
-        {post.title ? <Text style={styles.cardTitle}>{post.title}</Text> : null}
-        <Text style={styles.cardBody}>{post.content}</Text>
+        {post.title ? <Text style={[styles.cardTitle, { color: theme.text }]}>{post.title}</Text> : null}
+        <Text style={[styles.cardBody, { color: theme.text }]}>{post.content}</Text>
         {post.tags?.length ? (
           <View style={styles.tagsRow}>
             {post.tags.map((t) => (
-              <Chip key={t}>{t}</Chip>
+              <Chip key={t} theme={theme}>#{t}</Chip>
             ))}
           </View>
         ) : null}
@@ -232,152 +343,306 @@ function FeedCard({ post }) {
 
       <View style={styles.actionsRow}>
         <TouchableOpacity style={styles.actionBtn}>
-          <FA name="thumbs-up" size={16} color="#666" />
-          <Text style={styles.actionText}>{post.likes ?? 0}</Text>
+          <FA name="thumbs-up" size={16} color={theme.textMuted} />
+          <Text style={[styles.actionText, { color: theme.text }]}>{post.likes ?? 0}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn}>
-          <FA name="comment-alt" size={16} color="#666" />
-          <Text style={styles.actionText}>{post.comments ?? 0}</Text>
+          <FA name="comment-alt" size={16} color={theme.textMuted} />
+          <Text style={[styles.actionText, { color: theme.text }]}>{post.comments ?? 0}</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }} />
-        <TouchableOpacity style={styles.actionBtn}><FA name="share" size={16} color="#666" /><Text style={styles.actionText}>Share</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn}><FA name="bookmark" size={16} color="#666" /></TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => onShare?.(post)}>
+          <FA name="share" size={16} color={theme.textMuted} />
+          <Text style={[styles.actionText, { color: theme.text }]}>Share</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtn}><FA name="bookmark" size={16} color={theme.textMuted} /></TouchableOpacity>
       </View>
     </View>
   );
 }
 
-function ThreadCard({ t }) {
+function ThreadCard({ t, theme }) {
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}> 
       <View style={styles.cardHeaderRow}>
-        <View style={styles.avatar}>
+        <View style={[styles.avatar, { backgroundColor: theme.primary }]}> 
           {t.avatar ? (
             <Image source={{ uri: t.avatar }} style={styles.avatarImg} />
           ) : (
-            <Text style={styles.avatarFallback}>{t.author.slice(0, 2).toUpperCase()}</Text>
+            <Text style={[styles.avatarFallback, { color: palette.light.bg }]}>{t.author.slice(0, 2).toUpperCase()}</Text>
           )}
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text numberOfLines={1} style={styles.author}>{t.author}</Text>
-          <Text style={styles.meta}>{(t.stance ?? "Chintana") + " · " + t.time}</Text>
+          <Text numberOfLines={1} style={[styles.author, { color: theme.text }]}>{t.author}</Text>
+          <Text style={[styles.meta, { color: theme.textMuted }]}>{(t.stance ?? 'Chintana') + ' · ' + t.time}</Text>
         </View>
-        <Badge>Chintana</Badge>
+        <Badge theme={theme}>Chintana</Badge>
       </View>
 
       <View style={{ marginTop: 4 }}>
-        <Text style={styles.cardBody}>{t.claim}</Text>
+        <Text style={[styles.cardBody, { color: theme.text }]}>{t.claim}</Text>
         {t.tags?.length ? (
           <View style={styles.tagsRow}>
             {t.tags.map((tg) => (
-              <Chip key={tg}>{tg}</Chip>
+              <Chip key={tg} theme={theme}>#{tg}</Chip>
             ))}
           </View>
         ) : null}
       </View>
 
       <View style={styles.actionsRow}>
-        <View style={styles.actionBtn}><FA name="comment-alt" size={16} color="#666" /><Text style={styles.actionText}>{t.replies ?? 0}</Text></View>
-        <View style={styles.actionBtn}><FA name="fire" size={16} color="#666" /><Text style={styles.actionText}>Active</Text></View>
+        <View style={styles.actionBtn}><FA name="comment-alt" size={16} color={theme.textMuted} /><Text style={[styles.actionText, { color: theme.text }]}>{t.replies ?? 0}</Text></View>
+        <View style={styles.actionBtn}><FA name="fire" size={16} color={theme.textMuted} /><Text style={[styles.actionText, { color: theme.text }]}>Active</Text></View>
       </View>
     </View>
   );
 }
 
-function EmptyState({ title, subtitle }) {
+function EmptyState({ title, subtitle, theme, cta }) {
   return (
-    <View style={styles.emptyCard}>
-      <View style={styles.emptyIcon}><FA name="bolt" size={20} color="#111" /></View>
-      <Text style={styles.emptyTitle}>{title}</Text>
-      <Text style={styles.emptySubtitle}>{subtitle}</Text>
-      <TouchableOpacity style={styles.primaryBtn}><Text style={styles.primaryBtnText}>Create your first post</Text></TouchableOpacity>
+    <View style={[styles.emptyCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
+      <View style={[styles.emptyIcon, { borderColor: theme.border }]}><FA name="bolt" size={20} color={theme.text} /></View>
+      <Text style={[styles.emptyTitle, { color: theme.text }]}>{title}</Text>
+      <Text style={[styles.emptySubtitle, { color: theme.textMuted }]}>{subtitle}</Text>
+      {!!cta && (
+        <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: theme.primary }]}>
+          <Text style={[styles.primaryBtnText, { color: palette.light.bg }]}>{cta}</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
 
-export default function VaikhariActivityScreen() {
-  const [tab, setTab] = useState("feed");
-  const [query, setQuery] = useState("");
+function Highlights({ theme }) {
+  return (
+    <View style={{ paddingVertical: 8 }}>
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>Highlights</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 6, gap: 10, paddingRight: 12 }}>
+        {highlights.map((h) => (
+          <TouchableOpacity key={h.id} style={[styles.highlightCard, { borderColor: theme.border }]}> 
+            <Image source={{ uri: h.img }} style={styles.highlightImg} />
+            <Text style={[styles.highlightText, { color: palette.light.bg }]} numberOfLines={1}>{h.title}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+function Suggestions({ theme }) {
+  return (
+    <View style={{ paddingTop: 8 }}>
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>Suggested</Text>
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        {suggested.map((s) => (
+          <View key={s.id} style={[styles.suggestCard, { borderColor: theme.border, backgroundColor: theme.card }]}> 
+            <Text style={{ color: theme.text, fontWeight: '600' }}>{s.title}</Text>
+            <Text style={{ color: theme.textMuted, marginTop: 2 }}>{s.handle}</Text>
+            <TouchableOpacity style={[styles.followBtn, { backgroundColor: theme.primary }]}>
+              <Text style={{ color: palette.light.bg, fontWeight: '700' }}>Follow</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function ListHeader({ theme }) {
+  return (
+    <View style={{ paddingHorizontal: 12 }}>
+      <TodayStories theme={theme} />
+      <Highlights theme={theme} />
+      <Suggestions theme={theme} />
+    </View>
+  );
+}
+
+// -------------------------------------------------------------
+// Compose Tiles (context-aware)
+// -------------------------------------------------------------
+function ComposeTileRN({ icon, title, theme }) {
+  return (
+    <TouchableOpacity style={[styles.composeTile, { borderColor: theme.border }]}> 
+      <View style={{ marginRight: 10 }}>{icon}</View>
+      <Text style={{ fontWeight: '600', color: theme.text }}>{title}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function ComposeTiles({ tab, theme }) {
+  // Two sets: A (post types) and B (śāstrīya modes)
+  const [setKey, setSetKey] = useState('A');
+  const SetToggle = () => (
+    <View style={styles.toggleWrap}>
+      <TouchableOpacity onPress={() => setSetKey('A')} style={[styles.toggleBtn, setKey==='A' && [styles.toggleActive]]}>
+        <Text style={[styles.toggleText, setKey==='A' && styles.toggleTextActive]}>Post Types</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => setSetKey('B')} style={[styles.toggleBtn, setKey==='B' && [styles.toggleActive]]}>
+        <Text style={[styles.toggleText, setKey==='B' && styles.toggleTextActive]}>Śāstrīya Modes</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const PostSet = () => (
+    <>
+      <ComposeTileRN icon={<FA name="lightbulb" size={18} color={theme.text} />} title="Thought" theme={theme} />
+      <ComposeTileRN icon={<FA name="stream" size={18} color={theme.text} />} title="Reflection" theme={theme} />
+      <ComposeTileRN icon={<FA name="feather-alt" size={18} color={theme.text} />} title="Poem" theme={theme} />
+      <ComposeTileRN icon={<FA name="book" size={18} color={theme.text} />} title="Sutra" theme={theme} />
+      <ComposeTileRN icon={<FA name="bullhorn" size={18} color={theme.text} />} title="Announce Book" theme={theme} />
+    </>
+  );
+
+  const ShastriyaSet = () => (
+    <>
+      <ComposeTileRN icon={<FA name="balance-scale" size={18} color={theme.text} />} title="Purva Paksha" theme={theme} />
+      <ComposeTileRN icon={<FA name="gavel" size={18} color={theme.text} />} title="Uttara Paksha" theme={theme} />
+      <ComposeTileRN icon={<FA name="question" size={18} color={theme.text} />} title="Question" theme={theme} />
+      <ComposeTileRN icon={<FA name="check-circle" size={18} color={theme.text} />} title="Siddhanta" theme={theme} />
+    </>
+  );
+
+  // Logic by tab
+  if (tab === 'feed' || tab === 'myposts') {
+    return <PostSet />; // Wall and My Posts: standard set
+  }
+  if (tab === 'circle') {
+    return (
+      <>
+        <SetToggle />
+        {setKey === 'A' ? <PostSet /> : <ShastriyaSet />}
+      </>
+    );
+  }
+  // Chintana focus: Quora-like + śāstrīya
+  return (
+    <>
+      <ComposeTileRN icon={<FA name="question-circle" size={18} color={theme.text} />} title="Ask a Question" theme={theme} />
+      <ShastriyaSet />
+    </>
+  );
+}
+
+// -------------------------------------------------------------
+// Main Screen
+// -------------------------------------------------------------
+export default function VaikhariActivityViralTodayScreen() {
+  const theme = useTheme();
+  const [tab, setTab] = useState('feed');
+  const [query, setQuery] = useState('');
   const [composeOpen, setComposeOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [dataset] = useState({ feed: sampleFeed, my: myPosts, circle: circleFeed, threads: chintanaThreads });
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 800);
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const f = (arr) => (q ? arr.filter((p) => `${p.title ?? ""} ${p.content} ${p.author}`.toLowerCase().includes(q)) : arr);
+    const f = (arr) => (q ? arr.filter((p) => `${p.title ?? ''} ${p.content ?? ''} ${p.author ?? ''}`.toLowerCase().includes(q)) : arr);
     return {
-      feed: f(sampleFeed),
-      my: f(myPosts),
-      circle: f(circleFeed),
-      threads: q ? chintanaThreads.filter((t) => `${t.claim} ${t.author}`.toLowerCase().includes(q)) : chintanaThreads,
+      feed: f(dataset.feed),
+      my: f(dataset.my),
+      circle: f(dataset.circle),
+      threads: q ? dataset.threads.filter((t) => `${t.claim} ${t.author}`.toLowerCase().includes(q)) : dataset.threads,
     };
-  }, [query]);
+  }, [query, dataset]);
+
+  const renderFeedItem = ({ item }) => (
+    <FeedCard post={item} theme={theme} onShare={() => {}} />
+  );
+  const renderThreadItem = ({ item }) => <ThreadCard t={item} theme={theme} />;
 
   const renderContent = () => {
-    if (tab === "feed") {
-      return filtered.feed.length ? (
+    if (tab === 'feed') {
+      return (
         <FlatList
           data={filtered.feed}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => <FeedCard post={item} />}
+          renderItem={renderFeedItem}
+          ListHeaderComponent={<ListHeader theme={theme} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}
+        />
+      );
+    }
+    if (tab === 'myposts') {
+      return filtered.my.length ? (
+        <FlatList
+          data={filtered.my}
+          keyExtractor={(i) => i.id}
+          contentContainerStyle={styles.list}
+          renderItem={renderFeedItem}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}
         />
       ) : (
-        <View style={styles.list}><EmptyState title="No posts yet" subtitle="Follow circles and authors to see posts here." /></View>
+        <View style={styles.list}>
+          <EmptyState title={"You haven't posted yet"} subtitle={'Share a note, quote, or case insight.'} theme={theme} cta={'Create your first post'} />
+        </View>
       );
     }
-    if (tab === "myposts") {
-      return filtered.my.length ? (
-        <FlatList data={filtered.my} keyExtractor={(i) => i.id} contentContainerStyle={styles.list} renderItem={({ item }) => <FeedCard post={item} />} />
-      ) : (
-        <View style={styles.list}><EmptyState title="You haven't posted yet" subtitle="Share a note, quote, or case insight." /></View>
-      );
-    }
-    if (tab === "circle") {
+    if (tab === 'circle') {
       return filtered.circle.length ? (
-        <FlatList data={filtered.circle} keyExtractor={(i) => i.id} contentContainerStyle={styles.list} renderItem={({ item }) => <FeedCard post={item} />} />
+        <FlatList
+          data={filtered.circle}
+          keyExtractor={(i) => i.id}
+          contentContainerStyle={styles.list}
+          renderItem={renderFeedItem}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}
+        />
       ) : (
-        <View style={styles.list}><EmptyState title="No circle activity" subtitle="Join circles to populate your feed." /></View>
+        <View style={styles.list}><EmptyState title={'No circle activity'} subtitle={'Join circles to populate your feed.'} theme={theme} /></View>
       );
     }
-    // chintana
     return filtered.threads.length ? (
-      <FlatList data={filtered.threads} keyExtractor={(i) => i.id} contentContainerStyle={styles.list} renderItem={({ item }) => <ThreadCard t={item} />} />
+      <FlatList
+        data={filtered.threads}
+        keyExtractor={(i) => i.id}
+        contentContainerStyle={styles.list}
+        renderItem={renderThreadItem}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}
+      />
     ) : (
-      <View style={styles.list}><EmptyState title="No threads yet" subtitle="Start a structured debate in Chintana." /></View>
+      <View style={styles.list}><EmptyState title={'No threads yet'} subtitle={'Start a structured debate in Chintana.'} theme={theme} /></View>
     );
   };
 
   return (
-    <View style={styles.page}>
-      <MobileHeader onSearch={setQuery} />
-      <TabBar value={tab} onChange={setTab} />
-      <FilterBar />
+    <View style={[styles.page, { backgroundColor: theme.bg }]}> 
+      <AppHeader />
 
-      <View style={{ flex: 1 }}>{renderContent()}</View>
+      {/* Orientation-aware container (adds padding for landscape) */}
+      <View style={{ flex: 1, paddingHorizontal: isLandscape ? 12 : 0 }}>{renderContent()}</View>
 
-      {/* Floating Action Button */}
-      <View style={styles.fabWrap} pointerEvents="box-none">
-        <View style={styles.fabInner}>
-          <TouchableOpacity style={styles.fab} onPress={() => setComposeOpen(true)}>
-            <FA name="plus" size={18} color="#fff" />
-            <Text style={styles.fabText}>Compose</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* Contextual bottom bar for Activity */}
+      <ContextBottomBar
+        items={[
+          { key: 'feed', icon: 'rss' },
+          { key: 'myposts', icon: 'user' },
+          { key: 'circle', icon: 'users' },
+          { key: 'chintana', icon: 'comments' },
+        ]}
+        value={tab}
+        onChange={setTab}
+        onFab={() => setComposeOpen(true)}
+      />
 
-      {/* Compose Bottom Sheet (Modal based) */}
+      {/* Compose Bottom Sheet (Modal) */}
       <Modal visible={composeOpen} transparent animationType="slide" onRequestClose={() => setComposeOpen(false)}>
         <View style={styles.sheetBackdrop}>
-          <View style={styles.sheet}>
-            <View style={styles.sheetHandle} />
-            <Text style={styles.sheetTitle}>Compose</Text>
+          <View style={[styles.sheet, { backgroundColor: theme.card }]}> 
+            <View style={[styles.sheetHandle, { backgroundColor: theme.border }]} />
+            <Text style={[styles.sheetTitle, { color: theme.text }]}>Compose</Text>
             <View style={styles.sheetGrid}>
-              <ComposeTileRN icon={<FA name="pen" size={18} color="#111" />} title="Post" />
-              <ComposeTileRN icon={<FA name="comment-dots" size={18} color="#111" />} title="Chintana" />
-              <ComposeTileRN icon={<FA name="users" size={18} color="#111" />} title="Circle Post" />
-              <ComposeTileRN icon={<FA name="book" size={18} color="#111" />} title="Book Note" />
+              <ComposeTiles tab={tab} theme={theme} />
             </View>
             <TouchableOpacity style={styles.sheetClose} onPress={() => setComposeOpen(false)}>
-              <Text style={styles.sheetCloseText}>Close</Text>
+              <Text style={[styles.sheetCloseText, { color: theme.text }]}>{'Close'}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -386,103 +651,107 @@ export default function VaikhariActivityScreen() {
   );
 }
 
-function ComposeTileRN({ icon, title }) {
-  return (
-    <TouchableOpacity style={styles.composeTile}>
-      <View style={{ marginRight: 10 }}>{icon}</View>
-      <Text style={{ fontWeight: "600", color: "#111" }}>{title}</Text>
-    </TouchableOpacity>
-  );
-}
-
-// -------------------------------------------------
+// -------------------------------------------------------------
 // Styles
-// -------------------------------------------------
+// -------------------------------------------------------------
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: "#fff" },
+  page: { flex: 1 },
   headerWrap: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: "#EAEAEA",
-    backgroundColor: "#ffffffCC",
     paddingHorizontal: 12,
     paddingBottom: 10,
     paddingTop: Platform.select({ ios: 6, android: 6, default: 6 }),
   },
-  headerRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  title: { fontSize: 20, fontWeight: "700", color: "#111" },
-  iconBtn: { height: 36, width: 36, alignItems: "center", justifyContent: "center", borderRadius: 18 },
-  searchInput: {
-    height: 40,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: "#E5E5E5",
-    backgroundColor: "#FAFAFA",
-    color: "#111",
-  },
-  tabBarWrap: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: "#EAEAEA",
-    backgroundColor: "#fff",
-  },
-  tabList: { flexDirection: "row", padding: 8 },
-  tabBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 10,
-    marginHorizontal: 4,
-    borderRadius: 16,
-    backgroundColor: "#F3F4F6",
-  },
-  tabBtnActive: { backgroundColor: "#111" },
-  tabLabel: { fontSize: 13, color: "#555", fontWeight: "600" },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  title: { fontSize: 20, fontWeight: '700' },
+  iconBtn: { height: 36, width: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 18 },
+  searchInput: { height: 40, borderRadius: 12, paddingHorizontal: 12, borderWidth: 1 },
 
-  filterBar: { paddingHorizontal: 12, paddingVertical: 8, flexDirection: "row", alignItems: "center", gap: 8 },
-  filterBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 999 },
-  filterText: { fontSize: 13, fontWeight: "600", color: "#111" },
-  tagBtn: { borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 },
-  tagText: { fontSize: 13, color: "#111" },
+  // Today Stories
+  storiesWrap: { paddingTop: 10 },
+  storiesRow: { paddingVertical: 6, paddingRight: 12 },
+  story: { width: 70, alignItems: 'center', marginRight: 10 },
+  storyRing: { height: 56, width: 56, borderRadius: 28, borderWidth: 2, borderColor: '#FF7A59', alignItems: 'center', justifyContent: 'center' },
+  storyImg: { height: 50, width: 50, borderRadius: 25 },
+  storyAddRing: { borderColor: '#22C55E' },
+  storyLabel: { marginTop: 6, fontSize: 11, fontWeight: '600' },
 
-  list: { padding: 12, gap: 12 },
-  card: { borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 16, padding: 12, backgroundColor: "#fff" },
-  cardHeaderRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  avatar: { height: 36, width: 36, borderRadius: 18, backgroundColor: "#111", alignItems: "center", justifyContent: "center" },
+  tabBarWrap: { borderBottomWidth: StyleSheet.hairlineWidth },
+  tabList: { flexDirection: 'row', padding: 8 },
+  tabBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, marginHorizontal: 4, borderRadius: 16 },
+  tabLabel: { fontSize: 13, fontWeight: '600' },
+
+  list: { padding: 12, gap: 12, paddingBottom: 140 },
+  card: { borderWidth: 1, borderRadius: 16, padding: 12 },
+  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  avatar: { height: 36, width: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   avatarImg: { height: 36, width: 36, borderRadius: 18 },
-  avatarFallback: { color: "#fff", fontWeight: "700" },
-  author: { fontWeight: "700", color: "#111" },
-  meta: { fontSize: 12, color: "#6B7280" },
-  cardTitle: { fontWeight: "700", color: "#111", marginTop: 4 },
-  cardBody: { color: "#111", opacity: 0.9, lineHeight: 20 },
-  tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
-  chip: { borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, backgroundColor: "#fff" },
-  chipText: { fontSize: 12, color: "#111" },
-  actionsRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 10 },
-  actionBtn: { flexDirection: "row", alignItems: "center", gap: 6 },
-  actionText: { fontSize: 13, color: "#444" },
+  avatarFallback: { fontWeight: '700' },
+  author: { fontWeight: '700' },
+  meta: { fontSize: 12 },
+  cardTitle: { fontWeight: '700', marginTop: 4 },
+  cardBody: { opacity: 0.95, lineHeight: 20 },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  chip: { borderWidth: 1, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10 },
+  chipText: { fontSize: 12 },
+  actionsRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  actionText: { fontSize: 13 },
 
-  emptyCard: { alignItems: "center", gap: 8, borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 16, padding: 24, margin: 12 },
-  emptyIcon: { borderWidth: 1, borderColor: "#E5E5E5", padding: 8, borderRadius: 999 },
-  emptyTitle: { fontWeight: "700", color: "#111" },
-  emptySubtitle: { color: "#6B7280", textAlign: "center" },
-  primaryBtn: { marginTop: 8, backgroundColor: "#111", paddingVertical: 10, paddingHorizontal: 16, borderRadius: 999 },
-  primaryBtnText: { color: "#fff", fontWeight: "700" },
+  emptyCard: { alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 16, padding: 24, margin: 12 },
+  emptyIcon: { borderWidth: 1, padding: 8, borderRadius: 999 },
+  emptyTitle: { fontWeight: '700' },
+  emptySubtitle: { textAlign: 'center' },
+  primaryBtn: { marginTop: 8, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 999 },
+  primaryBtnText: { fontWeight: '700' },
 
-  fabWrap: { position: "absolute", left: 0, right: 0, bottom: 12 },
-  fabInner: { maxWidth: 640, alignSelf: "center", width: "100%", paddingHorizontal: 12 },
-  fab: { height: 48, borderRadius: 999, backgroundColor: "#111", alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
-  fabText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  fabWrap: { position: 'absolute', left: 0, right: 0, bottom: 12 },
+  fabInner: { alignSelf: 'center', width: '100%', paddingHorizontal: 12 },
+  fab: { height: 48, borderRadius: 999, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
+  fabText: { fontWeight: '700', fontSize: 16 },
 
-  badge: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: 999, borderWidth: 1, borderColor: "#E5E5E5" },
-  badgeText: { fontSize: 12, color: "#111" },
+  badge: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: 999, borderWidth: 1 },
+  badgeText: { fontSize: 12 },
 
-  sheetBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.2)", justifyContent: "flex-end" },
-  sheet: { backgroundColor: "#fff", borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16 },
-  sheetHandle: { alignSelf: "center", height: 4, width: 40, borderRadius: 2, backgroundColor: "#E5E5E5", marginBottom: 10 },
-  sheetTitle: { fontWeight: "700", color: "#111", marginBottom: 10 },
-  sheetGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  sheetClose: { marginTop: 12, alignSelf: "center", paddingVertical: 8, paddingHorizontal: 16 },
-  sheetCloseText: { color: "#111", fontWeight: "600" },
+  sheetBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'flex-end' },
+  sheet: { borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16 },
+  sheetHandle: { alignSelf: 'center', height: 4, width: 40, borderRadius: 2, marginBottom: 10 },
+  sheetTitle: { fontWeight: '700', marginBottom: 10 },
+  sheetGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  sheetClose: { marginTop: 12, alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 16 },
+  sheetCloseText: { fontWeight: '600' },
+
+  // Compose sheet toggle
+  toggleWrap: { flexDirection: 'row', gap: 6, marginBottom: 8, width: '100%' },
+  toggleBtn: { flex: 1, borderWidth: 1, borderColor: '#E5E7EB', paddingVertical: 8, borderRadius: 999, alignItems: 'center' },
+  toggleActive: { backgroundColor: '#0F172A' },
+  toggleText: { fontWeight: '600', color: '#111' },
+  toggleTextActive: { color: '#fff' },
+
+  sectionTitle: { fontSize: 14, fontWeight: '700', paddingHorizontal: 4 },
+  highlightCard: { width: 140, height: 84, borderRadius: 12, overflow: 'hidden', borderWidth: 1 },
+  highlightImg: { width: '100%', height: '100%', borderRadius: 12 },
+  highlightText: { position: 'absolute', bottom: 6, left: 8, right: 8, fontWeight: '700' },
+  suggestCard: { flex: 1, borderWidth: 1, borderRadius: 12, padding: 12, minWidth: 140 },
+  followBtn: { marginTop: 10, alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999 },
+
+  // Book carousel
+  bookCard: { width: 160, borderWidth: 1, borderRadius: 12, overflow: 'hidden' },
+  bookImg: { width: '100%', height: 120 },
+
+  // Compose tile
+  composeTile: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderWidth: 1, borderRadius: 12, minWidth: 140 },
 });
+
+// -------------------------------------------------------------
+// Lightweight runtime checks (DEV only) — serves as simple tests
+// -------------------------------------------------------------
+export const __tests__ = {
+  hasTabs: () => TAB_KEYS.length === 4,
+  storiesCount: () => todayStories.length >= 1,
+  booksCount: () => recentBooks.length >= 1,
+  dataShapes: () => Array.isArray(sampleFeed) && Array.isArray(myPosts) && Array.isArray(circleFeed) && Array.isArray(chintanaThreads),
+};
+
+
+
