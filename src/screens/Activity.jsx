@@ -25,6 +25,7 @@ import {
 import { FontAwesome5 as FA } from '@expo/vector-icons';
 import AppHeader from '../components/AppHeader';
 import ContextBottomBar from '../components/ContextBottomBar';
+import { useThemeMode } from '../theme/ThemeProvider';
 
 // -------------------------------------------------------------
 // THEME (auto light/dark + tokens)
@@ -50,11 +51,23 @@ const palette = {
     card: '#0E1420',
     chipBG: '#0B0F17',
   },
+  grey: {
+    bg: '#F5F5F5',
+    bgMuted: '#EFEFEF',
+    text: '#111827',
+    textMuted: '#6B7280',
+    border: '#E5E7EB',
+    primary: '#111827',
+    card: '#FFFFFF',
+    chipBG: '#FFFFFF',
+  },
 };
 
 const useTheme = () => {
-  const scheme = Appearance.getColorScheme?.() ?? 'light';
-  return scheme === 'dark' ? palette.dark : palette.light;
+  const { mode } = useThemeMode();
+  if (mode === 'dark') return palette.dark;
+  if (mode === 'grey') return palette.grey;
+  return palette.light;
 };
 
 // -------------------------------------------------------------
@@ -211,13 +224,13 @@ function Chip({ children, theme }) {
   );
 }
 
-function TodayStories({ theme }) {
+function TodayStories({ theme, onPressStory }) {
   return (
     <View style={styles.storiesWrap}>
       <Text style={[styles.sectionTitle, { color: theme.text, paddingHorizontal: 4 }]}>Today</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.storiesRow]}> 
-        {todayStories.map((s) => (
-          <TouchableOpacity key={s.id} style={styles.story}>
+        {todayStories.map((s, idx) => (
+          <TouchableOpacity key={s.id} style={styles.story} onPress={() => onPressStory?.(idx)}>
             <View style={[styles.storyRing, s.me && styles.storyAddRing]}> 
               <Image source={{ uri: s.img }} style={styles.storyImg} />
             </View>
@@ -448,11 +461,12 @@ function Suggestions({ theme }) {
   );
 }
 
-function ListHeader({ theme }) {
+function ListHeader({ theme, onPressStory }) {
   return (
     <View style={{ paddingHorizontal: 12 }}>
-      <TodayStories theme={theme} />
-      <Highlights theme={theme} />
+      <TodayStories theme={theme} onPressStory={onPressStory} />
+      {/* Replace Highlights with Latest Releases carousel */}
+      <BooksCarousel theme={theme} />
       <Suggestions theme={theme} />
     </View>
   );
@@ -537,6 +551,13 @@ export default function VaikhariActivityViralTodayScreen() {
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
 
+  // Story viewer state
+  const [storyOpen, setStoryOpen] = useState(false);
+  const [storyIndex, setStoryIndex] = useState(0);
+  const [storyLikes, setStoryLikes] = useState({}); // id -> +1/-1/0
+  const [commentsByStory, setCommentsByStory] = useState({}); // id -> [{id,text}]
+  const [commentsOpen, setCommentsOpen] = useState(false);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 800);
@@ -566,7 +587,7 @@ export default function VaikhariActivityViralTodayScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           renderItem={renderFeedItem}
-          ListHeaderComponent={<ListHeader theme={theme} />}
+          ListHeaderComponent={<ListHeader theme={theme} onPressStory={(idx) => { setStoryIndex(idx); setStoryOpen(true); }} />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.text} />}
         />
       );
@@ -647,6 +668,153 @@ export default function VaikhariActivityViralTodayScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Story Viewer Modal */}
+      <StoryViewerModal
+        visible={storyOpen}
+        initialIndex={storyIndex}
+        stories={todayStories}
+        theme={theme}
+        likes={storyLikes}
+        comments={commentsByStory}
+        onClose={() => setStoryOpen(false)}
+        onLike={(id) => setStoryLikes((m) => ({ ...m, [id]: (m[id] === 1 ? 0 : 1) }))}
+        onDislike={(id) => setStoryLikes((m) => ({ ...m, [id]: (m[id] === -1 ? 0 : -1) }))}
+        onDrift={(id) => {
+          // Placeholder: could navigate to compose with attribution
+          setComposeOpen(true);
+        }}
+        onOpenComments={(id) => {
+          setStoryOpen(true);
+          setCommentsOpen(true);
+        }}
+      />
+
+      {/* Comments Sheet */}
+      <Modal visible={commentsOpen} transparent animationType="slide" onRequestClose={() => setCommentsOpen(false)}>
+        <View style={styles.sheetBackdrop}>
+          <View style={[styles.sheet, { backgroundColor: theme.card }]}> 
+            <View style={[styles.sheetHandle, { backgroundColor: theme.border }]} />
+            <Text style={[styles.sheetTitle, { color: theme.text }]}>Comments</Text>
+            <CommentsList
+              theme={theme}
+              story={todayStories[storyIndex]}
+              comments={commentsByStory[todayStories[storyIndex]?.id] || []}
+              onAdd={(text) => {
+                const sid = todayStories[storyIndex]?.id;
+                if (!sid || !text.trim()) return;
+                setCommentsByStory((m) => ({
+                  ...m,
+                  [sid]: [...(m[sid] || []), { id: Date.now().toString(), text: text.trim() }],
+                }));
+              }}
+            />
+            <TouchableOpacity style={styles.sheetClose} onPress={() => setCommentsOpen(false)}>
+              <Text style={[styles.sheetCloseText, { color: theme.text }]}>{'Close'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+// -------------------------------------------------------------
+// Story Viewer (simple, vertical paging)
+// -------------------------------------------------------------
+function StoryViewerModal({ visible, initialIndex = 0, stories, theme, onClose, onLike, onDislike, onDrift, onOpenComments, likes, comments }) {
+  const { height } = useWindowDimensions();
+  const [index, setIndex] = useState(initialIndex);
+
+  React.useEffect(() => {
+    if (visible) setIndex(initialIndex);
+  }, [visible, initialIndex]);
+
+  if (!visible) return null;
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={[styles.viewerBackdrop, { backgroundColor: 'rgba(0,0,0,0.95)' }]}>
+        <FlatList
+          data={stories}
+          keyExtractor={(i) => i.id}
+          renderItem={({ item }) => (
+            <View style={{ height, justifyContent: 'center', alignItems: 'center' }}>
+              <Image source={{ uri: item.img }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} resizeMode="cover" />
+              <View style={[styles.viewerOverlay, { backgroundColor: 'rgba(0,0,0,0.25)' }]} />
+              <View style={styles.viewerHeader}>
+                <Text style={{ color: '#fff', fontWeight: '700' }}>{item.title}</Text>
+                <TouchableOpacity onPress={onClose} style={styles.viewerClose}><FA name="times" size={18} color="#fff" /></TouchableOpacity>
+              </View>
+              <View style={styles.viewerActions}>
+                <TouchableOpacity style={styles.viewerActionBtn} onPress={() => onLike(item.id)}>
+                  <FA name="thumbs-up" size={18} color={likes?.[item.id] === 1 ? '#22C55E' : '#fff'} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.viewerActionBtn} onPress={() => onDislike(item.id)}>
+                  <FA name="thumbs-down" size={18} color={likes?.[item.id] === -1 ? '#EF4444' : '#fff'} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.viewerActionBtn} onPress={() => onDrift(item.id)}>
+                  <FA name="feather" size={18} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.viewerActionBtn} onPress={() => onOpenComments(item.id)}>
+                  <FA name="comment" size={18} color="#fff" />
+                  <Text style={{ color: '#fff', marginTop: 4, fontSize: 12 }}>
+                    {(comments?.[item.id]?.length || 0).toString()}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+          initialScrollIndex={initialIndex}
+          onScrollToIndexFailed={() => {}}
+          pagingEnabled
+          snapToInterval={height}
+          decelerationRate="fast"
+          showsVerticalScrollIndicator={false}
+          getItemLayout={(_, i) => ({ length: height, offset: height * i, index: i })}
+          onMomentumScrollEnd={(e) => {
+            const y = e.nativeEvent.contentOffset.y;
+            const next = Math.round(y / height);
+            setIndex(next);
+          }}
+        />
+      </View>
+    </Modal>
+  );
+}
+
+function CommentsList({ theme, story, comments, onAdd }) {
+  const [text, setText] = useState('');
+  return (
+    <View>
+      <Text style={{ color: theme.text, marginBottom: 8 }}>{story?.title}</Text>
+      <View style={{ maxHeight: 260 }}>
+        <ScrollView>
+          {(comments || []).map((c) => (
+            <View key={c.id} style={{ paddingVertical: 8 }}>
+              <Text style={{ color: theme.text }}>{c.text}</Text>
+            </View>
+          ))}
+          {(!comments || comments.length === 0) && (
+            <Text style={{ color: theme.textMuted }}>No comments yet. Be the first to comment.</Text>
+          )}
+        </ScrollView>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 }}>
+        <TextInput
+          placeholder="Add a comment"
+          placeholderTextColor={theme.textMuted}
+          value={text}
+          onChangeText={setText}
+          style={[styles.searchInput, { flex: 1, borderColor: theme.border, backgroundColor: theme.bgMuted, color: theme.text }]}
+        />
+        <TouchableOpacity
+          style={[styles.primaryBtn, { backgroundColor: theme.primary }]}
+          onPress={() => { if (text.trim()) { onAdd(text); setText(''); } }}
+        >
+          <Text style={[styles.primaryBtnText, { color: palette.light.bg }]}>Post</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -741,6 +909,14 @@ const styles = StyleSheet.create({
 
   // Compose tile
   composeTile: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderWidth: 1, borderRadius: 12, minWidth: 140 },
+
+  // Story viewer
+  viewerBackdrop: { flex: 1 },
+  viewerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  viewerHeader: { position: 'absolute', top: 40, left: 16, right: 16, flexDirection: 'row', alignItems: 'center' },
+  viewerClose: { marginLeft: 'auto', height: 36, width: 36, alignItems: 'center', justifyContent: 'center' },
+  viewerActions: { position: 'absolute', right: 16, bottom: 40, alignItems: 'center', gap: 16 },
+  viewerActionBtn: { height: 44, width: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.35)' },
 });
 
 // -------------------------------------------------------------

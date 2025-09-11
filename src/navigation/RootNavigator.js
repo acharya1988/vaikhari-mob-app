@@ -13,12 +13,14 @@ import Compose from '../screens/Compose';
 import DriftDetail from '../screens/DriftDetail';
 import BookProfile from '../screens/BookProfile';
 import Reader from '../screens/Reader';
+import LivingDocument from '../screens/LivingDocument';
 import ContinueReading from '../screens/ContinueReading';
 import HomeGlowFeed from '../screens/HomeGlowFeed';
 import Library from '../screens/Library';
 import Drifts from '../screens/Drifts';
 import Chintana from '../screens/Chintana';
 import Activity from '../screens/Activity';
+import Messages, { ChatThread, CircleThread, ChintanaThread } from '../screens/Messages';
 
 const Stack = createNativeStackNavigator();
 
@@ -43,12 +45,17 @@ export default function RootNavigator() {
       <Stack.Screen name="DriftDetail" component={DriftDetail} />
       <Stack.Screen name="BookProfile" component={BookProfile} />
       <Stack.Screen name="Reader" component={Reader} />
+      <Stack.Screen name="LivingDocument" component={LivingDocument} />
       <Stack.Screen name="ContinueReading" component={ContinueReading} />
       <Stack.Screen name="HomeGlowFeed" component={HomeGlowFeed} />
       <Stack.Screen name="Library" component={Library} />
       <Stack.Screen name="Drifts" component={Drifts} />
       <Stack.Screen name="Chintana" component={Chintana} />
       <Stack.Screen name="Activity" component={Activity} />
+      <Stack.Screen name="Messages" component={Messages} />
+      <Stack.Screen name="ChatThread" component={ChatThread} />
+      <Stack.Screen name="CircleThread" component={CircleThread} />
+      <Stack.Screen name="ChintanaThread" component={ChintanaThread} />
     </Stack.Navigator>
   );
 }

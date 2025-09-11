@@ -26,8 +26,18 @@ export default function AppHeader() {
       if (p.openDrawer) return p.openDrawer();
       p = p.getParent ? p.getParent() : undefined;
     }
-    // Fallback to dispatch
-    nav.dispatch(DrawerActions.openDrawer());
+    // If not in a drawer (e.g., on a Stack-only screen), navigate to Main then open
+    try {
+      nav.navigate('Main');
+      setTimeout(() => {
+        const root = nav.getParent && nav.getParent();
+        const drawer = root?.getParent?.('RootDrawer') || root;
+        if (drawer?.openDrawer) drawer.openDrawer();
+      }, 30);
+    } catch (e) {
+      // Silent fallback to dispatch (may warn in dev if no drawer handles it)
+      nav.dispatch(DrawerActions.openDrawer());
+    }
   };
 
   return (
@@ -50,10 +60,8 @@ export default function AppHeader() {
         />
       </View>
       <View style={s.right}>
-        <Pressable onPress={() => nav.navigate('Notifications')}><FA name="envelope" size={18} color={colors.text} /></Pressable>
-        <Pressable onPress={() => nav.navigate('Notifications')}><FA name="bell" size={18} color={colors.text} /></Pressable>
         <Pressable onPress={() => setOpen(true)} style={{ marginLeft: 6 }}>
-          <Logo width={22} height={22} />
+          <Logo width={28} height={28} />
         </Pressable>
       </View>
 
@@ -71,6 +79,6 @@ const s = StyleSheet.create({
   left: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   center: { flex: 1, marginHorizontal: 8, justifyContent: 'center' },
   right: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  input: { backgroundColor: '#F7F7F7', borderRadius: 20, paddingLeft: 32, paddingRight: 12, height: 36, borderWidth: 1 },
+  input: { backgroundColor: '#F7F7F7', borderRadius: 24, paddingLeft: 36, paddingRight: 12, height: 42, borderWidth: 1 },
   brand: { fontFamily: 'Poppins_700Bold', letterSpacing: 1 },
 });
