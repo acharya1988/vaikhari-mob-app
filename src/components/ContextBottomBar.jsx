@@ -21,7 +21,7 @@ export default function ContextBottomBar({ items = [], value, onChange, onFab })
         <View style={s.centerGap}>
           {onFab ? (
             <Pressable style={s.fabInline} onPress={onFab} accessibilityLabel="Compose">
-              <FA name="plus" size={18} color="#FFF" />
+              <FA name="plus" size={20} color="#FFF" />
             </Pressable>
           ) : null}
         </View>
