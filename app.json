@@ -2,6 +2,17 @@
   "expo": {
     "name": "kalpatantra",
     "slug": "kalpatantra",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "scheme": "vaikhari",
+    "android": {
+      "package": "com.kalpatantra.vaikhari",
+      "googleServicesFile": "./google-services.json"
+    },
+    "extra": {
+      "GOOGLE_EXPO_CLIENT_ID": "378458540928-daicttk15pe6i81jthr8d8vq6roitqoc.apps.googleusercontent.com",
+      "GOOGLE_ANDROID_CLIENT_ID": "378458540928-daicttk15pe6i81jthr8d8vq6roitqoc.apps.googleusercontent.com",
+      "GOOGLE_IOS_CLIENT_ID": "378458540928-daicttk15pe6i81jthr8d8vq6roitqoc.apps.googleusercontent.com",
+      "GOOGLE_WEB_CLIENT_ID": "378458540928-daicttk15pe6i81jthr8d8vq6roitqoc.apps.googleusercontent.com"
+    }
   }
 }

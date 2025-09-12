@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "378458540928",
+    "firebase_url": "https://vakyaverse-default-rtdb.firebaseio.com",
+    "project_id": "vakyaverse",
+    "storage_bucket": "vakyaverse.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:378458540928:android:aae3ef623fc3207d960f65",
+        "android_client_info": {
+          "package_name": "com.kalpatantra.vaikhari"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "378458540928-daicttk15pe6i81jthr8d8vq6roitqoc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBeM-yw4ouYM0Whb-sm_EjRFp9pih_tDlQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "378458540928-daicttk15pe6i81jthr8d8vq6roitqoc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

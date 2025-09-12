@@ -3,8 +3,11 @@ import { View, Text, Image, StyleSheet, Pressable, ScrollView, Animated, Easing 
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import { FontAwesome5 as FA } from '@expo/vector-icons';
 import { useThemeMode } from '../theme/ThemeProvider';
+import { useAuthStore } from '../store/authStore';
+import { signOutSession } from '../actions/authAction';
+import { menu as sharedMenu, sections as sharedSections } from './menu';
 
-const sections = ['Connect', 'My Works', 'My Journey'];
+const sections = sharedSections;
 const sectionIcons = { 'Connect': 'link', 'My Works': 'briefcase', 'My Journey': 'route' };
 
 function SectionSelector({ value, onChange, colors }) {
@@ -34,39 +37,14 @@ export default function DrawerContent(props) {
   const { navigation } = props;
   const { mode, colors, cycle } = useThemeMode();
   const [section, setSection] = useState('Connect');
+  const { logout } = useAuthStore();
 
   const go = (route, params) => {
     navigation.closeDrawer();
     if (route) navigation.navigate(route, params);
   };
 
-  const menu = {
-    Connect: [
-      { label: 'Dashboard', icon: 'home', route: 'HomeGlowFeed' },
-      { label: 'Activity', icon: 'bolt', route: 'Activity' },
-      { label: 'People', icon: 'user-friends', route: 'People' },
-      { label: 'Organizations', icon: 'building', route: 'Circle' },
-      { label: 'Circles', icon: 'users', route: 'Circle' },
-      { label: 'Messages', icon: 'envelope', route: 'Messages' },
-    ],
-    'My Journey': [
-      { label: 'My Evolutions', icon: 'project-diagram', route: 'Chintana' },
-      { label: 'My Drifts', icon: 'wind', route: 'Drifts' },
-      { label: 'My Favorites', icon: 'star', route: 'Library' },
-      { label: 'My Layers', icon: 'layer-group', route: 'Settings' },
-      { label: 'My Notes', icon: 'sticky-note', route: 'Compose' },
-    ],
-    'My Works': [
-      { label: 'Library', icon: 'book', route: 'Library' },
-      { label: 'Manage Books', icon: 'book-open', route: 'Library' },
-      { label: 'Manage Articles', icon: 'file-alt', route: 'Search' },
-      { label: 'Citations', icon: 'quote-right', route: 'Search' },
-      { label: 'Quotes', icon: 'bookmark', route: 'Search' },
-      { label: 'Glossary', icon: 'book', route: 'Search' },
-      { label: 'Living Document', icon: 'file', route: 'Search' },
-      { label: 'Media', icon: 'image', route: 'Search' },
-    ],
-  };
+  const menu = sharedMenu;
 
   const items = menu[section];
 
@@ -118,7 +96,11 @@ export default function DrawerContent(props) {
           <Pressable onPress={cycle} accessibilityLabel="Theme" style={[st.iconCircle, { borderColor: colors.border }]}>
             <FA name="adjust" size={16} color={colors.text} />
           </Pressable>
-          <Pressable onPress={() => {}} accessibilityLabel="Logout" style={[st.iconCircle, { borderColor: colors.border }]}>
+          <Pressable onPress={async () => {
+            try { await signOutSession(); } catch (e) {}
+            await logout();
+            go('SignIn');
+          }} accessibilityLabel="Logout" style={[st.iconCircle, { borderColor: colors.border }]}>
             <FA name="sign-out-alt" size={16} color={colors.text} />
           </Pressable>
         </View>

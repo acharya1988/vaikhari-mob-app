@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { FontAwesome5 as FA } from '@expo/vector-icons';
-import { useNavigation, DrawerActions } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { useThemeMode } from '../theme/ThemeProvider';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SidePanel from './SidePanel';
 import Logo from '../design-collateral/Vaikhari logo.svg';
+import { useAuthStore } from '../store/authStore';
+import { menu as sharedMenu, sections as sharedSections } from '../navigation/menu';
 
 export default function AppHeader() {
   const nav = useNavigation();
@@ -13,38 +15,24 @@ export default function AppHeader() {
   const insets = useSafeAreaInsets();
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
+  const { token } = useAuthStore();
 
-  const openDrawer = () => {
-    // Try to find parent drawer by id first
-    if (nav.getParent) {
-      const p = nav.getParent('RootDrawer');
-      if (p && p.openDrawer) return p.openDrawer();
-    }
-    // Or walk up the tree until a drawer is found
-    let p = nav;
-    for (let i = 0; i < 6 && p; i++) {
-      if (p.openDrawer) return p.openDrawer();
-      p = p.getParent ? p.getParent() : undefined;
-    }
-    // If not in a drawer (e.g., on a Stack-only screen), navigate to Main then open
-    try {
-      nav.navigate('Main');
-      setTimeout(() => {
-        const root = nav.getParent && nav.getParent();
-        const drawer = root?.getParent?.('RootDrawer') || root;
-        if (drawer?.openDrawer) drawer.openDrawer();
-      }, 30);
-    } catch (e) {
-      // Silent fallback to dispatch (may warn in dev if no drawer handles it)
-      nav.dispatch(DrawerActions.openDrawer());
-    }
+  const onOpenMenu = () => setOpen(true);
+
+  const sections = sharedSections;
+  const menu = sharedMenu;
+
+  const onGo = (route) => {
+    setOpen(false);
+    if (!token) return nav.navigate('SignIn');
+    nav.navigate(route);
   };
 
   return (
     <View style={[s.wrap, { paddingTop: insets.top, borderBottomColor: colors.border, backgroundColor: colors.card }]}> 
       <View style={s.left}>
         <Text style={[s.brand, { color: colors.text }]}>VAIKHARI</Text>
-        <Pressable onPress={openDrawer} accessibilityLabel="Open menu" style={{ paddingHorizontal: 6, paddingVertical: 4 }}>
+        <Pressable onPress={onOpenMenu} accessibilityLabel="Open menu" style={{ paddingHorizontal: 6, paddingVertical: 4 }}>
           <FA name="bars" size={18} color={colors.text} />
         </Pressable>
       </View>
@@ -66,8 +54,34 @@ export default function AppHeader() {
       </View>
 
       <SidePanel visible={open} onClose={() => setOpen(false)} side="right">
-        <View style={{ flex: 1 }}>
-          <Logo width={40} height={40} />
+        <View style={{ padding: 12, gap: 12, flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Logo width={36} height={36} />
+            <Text style={{ fontFamily: 'Poppins_700Bold' }}>Navigation</Text>
+          </View>
+          {!token ? (
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Pressable onPress={() => { setOpen(false); nav.navigate('SignIn'); }} style={{ paddingVertical: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 12 }}>
+                <Text>Sign In</Text>
+              </Pressable>
+              <Pressable onPress={() => { setOpen(false); nav.navigate('SignUp'); }} style={{ paddingVertical: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 12 }}>
+                <Text>Create Account</Text>
+              </Pressable>
+            </View>
+          ) : null}
+          <ScrollView>
+            {sections.map((sec) => (
+              <View key={sec} style={{ marginBottom: 12 }}>
+                <Text style={{ fontFamily: 'Poppins_600SemiBold', marginBottom: 6 }}>{sec}</Text>
+                {menu[sec].map((it) => (
+                  <Pressable key={it.label} onPress={() => onGo(it.route)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
+                    <FA name={it.icon} size={14} color={colors.text} style={{ width: 22 }} />
+                    <Text style={{ marginLeft: 8 }}>{it.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ))}
+          </ScrollView>
         </View>
       </SidePanel>
     </View>

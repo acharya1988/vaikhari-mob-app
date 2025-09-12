@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import DrawerNavigator from './DrawerNavigator';
 import Onboarding from '../screens/Onboarding';
 import SignIn from '../screens/SignIn';
 import MFA from '../screens/MFA';
+import SignUp from '../screens/SignUp';
+import EnrollMFA from '../screens/EnrollMFA';
+import Home from '../screens/Home';
 import Circle from '../screens/Circle';
 import People from '../screens/People';
 import Search from '../screens/Search';
@@ -21,18 +24,38 @@ import Drifts from '../screens/Drifts';
 import Chintana from '../screens/Chintana';
 import Activity from '../screens/Activity';
 import Messages, { ChatThread, CircleThread, ChintanaThread } from '../screens/Messages';
+import { useAuthStore } from '../store/authStore';
+
 
 const Stack = createNativeStackNavigator();
 
 export default function RootNavigator() {
+  const { token, hydrated, loadToken } = useAuthStore();
+
+  useEffect(() => {
+    if (!hydrated) loadToken();
+  }, [hydrated]);
+
+  // Wait for token hydration
+  if (!hydrated) return null;
+
+  if (!token) {
+    // Public/auth stack only
+    return (
+      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Home">
+        <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="Onboarding" component={Onboarding} />
+        <Stack.Screen name="SignIn" component={SignIn} />
+        <Stack.Screen name="SignUp" component={SignUp} />
+        <Stack.Screen name="EnrollMFA" component={EnrollMFA} />
+        <Stack.Screen name="MFA" component={MFA} />
+      </Stack.Navigator>
+    );
+  }
+
+  // Authenticated: full app
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Main">
-      {/* Auth/onboarding flow (mock) */}
-      <Stack.Screen name="Onboarding" component={Onboarding} />
-      <Stack.Screen name="SignIn" component={SignIn} />
-      <Stack.Screen name="MFA" component={MFA} />
-
-      {/* App main drawer */}
       <Stack.Screen name="Main" component={DrawerNavigator} />
 
       {/* Global routes for easy navigate('ScreenName') */}
