@@ -13,8 +13,6 @@ import Constants from 'expo-constants';
 import { FontAwesome5 as FA } from '@expo/vector-icons';
 import { getGoogleWebClientId } from '../auth/googleConfig';
 
-
-
 WebBrowser.maybeCompleteAuthSession();
 
 export default function SignIn({ navigation }) {
@@ -22,97 +20,36 @@ export default function SignIn({ navigation }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { setToken } = useAuthStore();
+
+  // Runtime/env
   const extra = Constants?.expoConfig?.extra || {};
-  const webClientId = getGoogleWebClientId();
   const isExpoGo = Constants?.appOwnership === 'expo';
-  const redirectUri =    AuthSession.makeRedirectUri({ scheme: 'vaikhari', path: 'oauth2redirect' });
+  const expoClientId = extra.GOOGLE_EXPO_CLIENT_ID || getGoogleWebClientId();
+  const androidClientId = extra.GOOGLE_ANDROID_CLIENT_ID || undefined;
+  const iosClientId = extra.GOOGLE_IOS_CLIENT_ID || undefined;
 
-  console.log("redirectUri",redirectUri)
+  // Useful logs for debugging setup
+  console.log('Auth redirect (computed):', AuthSession.makeRedirectUri({ useProxy: isExpoGo }));
+  console.log('isExpoGo:', isExpoGo);
+  console.log('expoClientId:', expoClientId);
 
-  // isExpoGo
-  //   ? AuthSession.makeRedirectUri({ useProxy: true })
-
-  // console.log("extraa",extra)
-  // console.log("webClientId",webClientId)
-
-  const clientConfig = 
-    // ? { expoClientId: "378458540928-daicttk15pe6i81jthr8d8vq6roitqoc.apps.googleusercontent.com" }
-    // :
-     {
-        androidClientId: "378458540928-daicttk15pe6i81jthr8d8vq6roitqoc.apps.googleusercontent.com",
-     }//   iosClientId: extra.GOOGLE_IOS_CLIENT_ID || undefined,
-      // };
-
-      console.log("clientConfig",clientConfig)
-
-
-  // const [request, response, promptAsync] = Google.useAuthRequest({
- 
-  //   androidClientId: "378458540928-lbnbjbb6roitqoc.apps.googleusercontent.com",
-
-  //   scopes: ['profile', 'email'],
-  //   responseType: 'id_token',
-  //   selectAccount: true,
-  //   redirectUri,
-  // });
-
-    // IMPORTANT: provide BOTH expoClientId and androidClientId
-  const [request, response, promptAsync] = Google.useAuthRequest({
-  
-
-    // expoClientId: "YOUR_EXPO_GO_CLIENT_ID.apps.googleusercontent.com",     // for Expo Go
-    // androidClientId: "YOUR_ANDROID_OAUTH_CLIENT_ID.apps.googleusercontent.com", // for dev client / APK
-    // webClientId: "YOUR_WEB_OAUTH_CLIENT_ID.apps.googleusercontent.com",    // helps issue Firebase-verifiable id_token
-    // Do NOT pass redirectUri unless you have a special case; the hook infers it.
-    responseType: "id_token",
-    scopes: ["profile", "email"],
-    selectAccount: true,
-  });
-  console.log("request",request)
-  console.log("response",response)
+  // Configure Google Auth request
+  const [request, response, promptAsync] = Google.useAuthRequest(
+    isExpoGo
+      ? { expoClientId, responseType: 'id_token', scopes: ['openid', 'profile', 'email'], selectAccount: true }
+      : { androidClientId, iosClientId, responseType: 'id_token', scopes: ['openid', 'profile', 'email'], selectAccount: true }
+  );
 
   useEffect(() => {
-    const run = async () => {
-      if (response?.type === 'success') {
-        const googleIdToken = response.params?.id_token;
-        if (!googleIdToken) return;
-        setLoading(true);
-        try {
-          const auth = await signInWithGoogleIdToken(googleIdToken);
-          const { idToken, uid, email, providerIds } = auth;
-          await setToken(idToken);
-          const upRes = await upsertUser({ uid, email, providerIds, idToken });
-          if (!upRes.status) throw new Error('Failed to upsert user');
-          const meRes = await getMe({ idToken });
-          if (!meRes.status) throw new Error('Failed to fetch profile');
-          navigation.replace('Main');
-        } catch (e) {
-          alert(e.message || 'Google sign-in failed');
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-    run();
+    // Bypass Google sign-in: if flow returns, just go to Activity/Main
+    if (response?.type === 'success') {
+      navigation.replace('Main');
+    }
   }, [response]);
 
   const onContinue = async () => {
-    setLoading(true);
-    try {
-      const auth = await signInWithEmailPassword(email.trim(), password);
-      const { idToken, uid, providerIds } = auth;
-      await setToken(idToken);
-      const upRes = await upsertUser({ uid, email, providerIds, idToken });
-      if (!upRes.status) throw new Error('Failed to upsert user');
-      const meRes = await getMe({ idToken });
-      if (!meRes.status) throw new Error('Failed to fetch profile');
-      navigation.replace('Main');
-    } catch (e) {
-      console.log(e);
-      alert(e.message || 'Sign-in failed');
-    } finally {
-      setLoading(false);
-    }
+    // Bypass email/password auth and go straight to Activity/Main
+    navigation.replace('Main');
   };
 
   return (
@@ -124,8 +61,8 @@ export default function SignIn({ navigation }) {
         <Button
           variant="outline"
           title="Continue with Google"
-          onPress={() => promptAsync({ useProxy: isExpoGo })}
-          disabled={!request || loading}
+          onPress={() => navigation.replace('Main')}
+          disabled={loading}
           left={<FA name="google" size={16} color="#000" />}
         />
         <Button variant="ghost" title="Use MFA" onPress={() => navigation.navigate('EnrollMFA')} />

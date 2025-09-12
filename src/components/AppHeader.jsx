@@ -24,7 +24,7 @@ export default function AppHeader() {
 
   const onGo = (route) => {
     setOpen(false);
-    if (!token) return nav.navigate('SignIn');
+    // Allow navigation even without token during development
     nav.navigate(route);
   };
 
@@ -32,7 +32,7 @@ export default function AppHeader() {
     <View style={[s.wrap, { paddingTop: insets.top, borderBottomColor: colors.border, backgroundColor: colors.card }]}> 
       <View style={s.left}>
         <Text style={[s.brand, { color: colors.text }]}>VAIKHARI</Text>
-        <Pressable onPress={onOpenMenu} accessibilityLabel="Open menu" style={{ paddingHorizontal: 6, paddingVertical: 4 }}>
+        <Pressable onPress={onOpenMenu} accessibilityLabel="Open menu" style={{ paddingHorizontal: 1, paddingVertical: 4 }}>
           <FA name="bars" size={18} color={colors.text} />
         </Pressable>
       </View>
@@ -49,7 +49,7 @@ export default function AppHeader() {
       </View>
       <View style={s.right}>
         <Pressable onPress={() => setOpen(true)} style={{ marginLeft: 6 }}>
-          <Logo width={28} height={28} />
+          <Logo width={38} height={38} />
         </Pressable>
       </View>
 

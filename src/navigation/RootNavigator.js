@@ -30,33 +30,22 @@ import { useAuthStore } from '../store/authStore';
 const Stack = createNativeStackNavigator();
 
 export default function RootNavigator() {
-  const { token, hydrated, loadToken } = useAuthStore();
+  const { hydrated, loadToken } = useAuthStore();
 
   useEffect(() => {
     if (!hydrated) loadToken();
   }, [hydrated]);
 
-  // Wait for token hydration
+  // Wait for token hydration to avoid flicker
   if (!hydrated) return null;
 
-  if (!token) {
-    // Public/auth stack only
-    return (
-      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Home">
-        <Stack.Screen name="Home" component={Home} />
-        <Stack.Screen name="Onboarding" component={Onboarding} />
-        <Stack.Screen name="SignIn" component={SignIn} />
-        <Stack.Screen name="SignUp" component={SignUp} />
-        <Stack.Screen name="EnrollMFA" component={EnrollMFA} />
-        <Stack.Screen name="MFA" component={MFA} />
-      </Stack.Navigator>
-    );
-  }
-
-  // Authenticated: full app
+  // Bypass auth gating: always load the main app
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Main">
       <Stack.Screen name="Main" component={DrawerNavigator} />
+
+      {/* Keep SignIn available to avoid broken links during dev */}
+      <Stack.Screen name="SignIn" component={SignIn} />
 
       {/* Global routes for easy navigate('ScreenName') */}
       <Stack.Screen name="Circle" component={Circle} />

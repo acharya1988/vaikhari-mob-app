@@ -99,7 +99,8 @@ export default function DrawerContent(props) {
           <Pressable onPress={async () => {
             try { await signOutSession(); } catch (e) {}
             await logout();
-            go('SignIn');
+            // Stay in app after logout to keep dev flow; go to Activity
+            go('Activity');
           }} accessibilityLabel="Logout" style={[st.iconCircle, { borderColor: colors.border }]}>
             <FA name="sign-out-alt" size={16} color={colors.text} />
           </Pressable>
