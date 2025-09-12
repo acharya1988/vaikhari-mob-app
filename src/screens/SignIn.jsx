@@ -58,9 +58,7 @@ export default function SignIn({ navigation }) {
 
     // IMPORTANT: provide BOTH expoClientId and androidClientId
   const [request, response, promptAsync] = Google.useAuthRequest({
-    expoClientId: "378458540928-lbnbjbb6roitqoc.apps.googleusercontent.com",
-    androidClientId: "378458540928-lbnbjbb6roitqoc.apps.googleusercontent.com",
-    webClientId: "378458540928-lbnbjbb6roitqoc.apps.googleusercontent.com",
+  
 
     // expoClientId: "YOUR_EXPO_GO_CLIENT_ID.apps.googleusercontent.com",     // for Expo Go
     // androidClientId: "YOUR_ANDROID_OAUTH_CLIENT_ID.apps.googleusercontent.com", // for dev client / APK
