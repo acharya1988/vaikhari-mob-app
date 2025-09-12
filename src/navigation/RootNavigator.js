@@ -39,10 +39,10 @@ export default function RootNavigator() {
   // Wait for token hydration
   if (!hydrated) return null;
 
-  if (!token) {
+  // if (!token) {
     // Public/auth stack only
     return (
-      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Home">
+      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="SignUp">
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Onboarding" component={Onboarding} />
         <Stack.Screen name="SignIn" component={SignIn} />
@@ -51,12 +51,12 @@ export default function RootNavigator() {
         <Stack.Screen name="MFA" component={MFA} />
       </Stack.Navigator>
     );
-  }
+  // }
 
   // Authenticated: full app
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Main">
-      <Stack.Screen name="Main" component={DrawerNavigator} />
+    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Login">
+      <Stack.Screen name="Login" component={LoginScreen} />
 
       {/* Global routes for easy navigate('ScreenName') */}
       <Stack.Screen name="Circle" component={Circle} />
