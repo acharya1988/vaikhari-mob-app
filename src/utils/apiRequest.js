@@ -89,7 +89,9 @@ export const apiRequest = async ({
     if (query) endUrl += createQueryOrParams(query, "query");
 
     // Full URL
+
     const url = API_URL + endUrl;
+    console.log("urls",url);
 
     // Fetch options
     const options = {

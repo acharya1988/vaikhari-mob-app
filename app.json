@@ -2,6 +2,11 @@
   "expo": {
     "name": "kalpatantra",
     "slug": "kalpatantra",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "updates": {
+      "enabled": false,
+      "checkAutomatically": "ON_ERROR_RECOVERY",
+      "fallbackToCacheTimeout": 0
+    }
   }
 }
