@@ -22,6 +22,7 @@ export default function AppHeader() {
   const { setOpen: setCopilotOpen } = useCopilotStore();
 
   const onOpenMenu = () => setOpen(true);
+  //changes
 
   const sections = sharedSections;
   const menu = sharedMenu;
