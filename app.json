@@ -4,6 +4,7 @@
     "slug": "kalpatantra",
     "version": "1.0.0",
     "scheme": "vaikhari",
+     "platforms": ["ios", "android", "web"],
     "android": {
       "package": "com.kalpatantra.vaikhari",
       "googleServicesFile": "./google-services.json"
