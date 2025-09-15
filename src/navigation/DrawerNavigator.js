@@ -1,21 +1,14 @@
 import React from 'react';
-import { createDrawerNavigator } from '@react-navigation/drawer';
-import DrawerContent from './DrawerContent';
-import BottomTabs from './BottomTabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Activity from '../screens/Activity';
 
-const Drawer = createDrawerNavigator();
+const Stack = createNativeStackNavigator();
 
+// Simplified navigator without gestures or drawer dependency
 export default function DrawerNavigator() {
   return (
-    <Drawer.Navigator
-      id="RootDrawer"
-      initialRouteName="Activity"
-      screenOptions={{ headerShown: false }}
-      drawerContent={(props) => <DrawerContent {...props} />}
-    >
-      {/* Primary home is Activity */}
-      <Drawer.Screen name="Activity" component={Activity} />
-    </Drawer.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Activity">
+      <Stack.Screen name="Activity" component={Activity} />
+    </Stack.Navigator>
   );
 }

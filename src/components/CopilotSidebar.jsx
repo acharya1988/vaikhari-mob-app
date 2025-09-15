@@ -15,7 +15,7 @@ export default function CopilotSidebar() {
   };
 
   return (
-    <SidePanel visible={open} onClose={() => setOpen(false)} side="left" width={360}>
+    <SidePanel visible={open} onClose={() => setOpen(false)} side="left" width={100}>
       <View style={{ flex: 1, width: '100%' }}>
         <View style={[styles.header, { borderBottomColor: colors.border }]}> 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
